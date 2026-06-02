@@ -434,41 +434,46 @@ Return ONLY raw JSON (no markdown, no backticks, no explanation):
   "summary": "3 sentences: years+skill, key achievement, value for this role",
   "experience": [
     {
-      "company": "Company Name",
-      "role": "Job Title",
-      "duration": "Jan 2022 – Present",
-      "location": "City, Country",
+      "company": "exact employer the candidate stated",
+      "role": "exact job title the candidate stated",
+      "duration": "exact dates if stated, else \"\"",
+      "location": "location if stated, else \"\"",
       "bullets": [
-        "Strong action verb + what you did + quantified result",
-        "Strong action verb + what you did + quantified result",
-        "Strong action verb + what you did + quantified result"
+        "strong action verb + real thing they did + quantified result (only real details)",
+        "strong action verb + real thing they did + quantified result (only real details)"
       ]
     }
   ],
   "education": [
-    { "degree": "B.Tech Computer Science", "institution": "University Name", "year": "2019", "gpa": "8.5/10" }
+    { "degree": "exact degree the candidate stated", "institution": "exact institution", "year": "year if stated else \"\"", "gpa": "gpa only if stated else \"\"" }
   ],
   "skills": {
-    "technical": ["Skill1","Skill2","Skill3","Skill4","Skill5","Skill6","Skill7","Skill8"],
-    "soft": ["Leadership","Communication","Problem Solving","Team Collaboration"]
+    "technical": ["skills the candidate stated or that are clearly implied by their described work"],
+    "soft": ["relevant soft skills"]
   },
   "certifications": [
-    { "name": "Certification Name", "issuer": "Issuing Body", "year": "2023" }
+    { "name": "certification the candidate actually mentioned", "issuer": "issuer if stated else \"\"", "year": "year if stated else \"\"" }
   ],
   "projects": [
-    { "name": "Project Name", "description": "What it does + tech stack + impact/scale", "tech": ["Tech1","Tech2","Tech3"] }
+    { "name": "project the candidate actually mentioned", "description": "what it does + impact", "tech": ["tech actually used"] }
   ],
-  "languages": ["English (Fluent)", "Hindi (Native)"],
+  "languages": ["only languages the candidate actually mentioned"],
   "coverLetter": "Full 3-paragraph cover letter. Para1: enthusiasm for role and company. Para2: 2-3 specific achievements matching the role. Para3: confident call to action.",
   "extraSections": [
     { "heading": "Field-specific section title", "items": ["concise, specific point", "concise, specific point"] }
   ]
 }
 
+CRITICAL — DO NOT FABRICATE. The empty/example values in the JSON above are FORMAT ONLY. Build the resume strictly from the candidate's text:
+- NEVER invent employers, job titles, dates/durations, locations, schools, degrees, GPAs, certifications, registration numbers, projects, or languages. Include an item ONLY if the candidate actually mentioned it.
+- If the candidate did not mention education, certifications, projects, or languages, return an EMPTY array [] for that field. Do not fill it with examples or plausible guesses.
+- For any field you have no real value for (e.g. a duration or GPA that wasn't stated), use "" — never guess.
+- You MAY rephrase/strengthen the wording of real items, write the summary and cover letter, and list skills that are clearly implied by the described work. You may NOT add facts the candidate did not provide.
+
 Rules:
-- Infer professional content (summary, experience, skills, etc.) from the experience text. Make bullets punchy and quantified. Use strong action verbs.
-- CONTACT INFO IS NOT INVENTED. Use name/email/phone/location/linkedin/portfolio EXACTLY as given above. If a value is empty, output an empty string "" for it — never fabricate or guess a LinkedIn URL, portfolio, email, phone, or location.
-- "extraSections": add 1–2 sections that are specifically valuable on a ${prof.label} resume${prof.sections.length ? ` — suggested headings: ${prof.sections.join(", ")}` : ""}. Each "items" entry is one short line (a license/registration no., a publication, a notable case, an award, etc.). Only include sections you can populate from the experience; if none add value, return "extraSections": [].`;
+- Make bullets punchy and quantified using ONLY real details from the text. Use strong action verbs.
+- CONTACT INFO IS NOT INVENTED. Use name/email/phone/location/linkedin/portfolio EXACTLY as given above; empty stays "".
+- "extraSections": include a section ONLY if you can populate it from the candidate's text (suggested for ${prof.label}: ${prof.sections.length ? prof.sections.join(", ") : "none"}). If nothing qualifies, return "extraSections": [].`;
 
   let text;
   try {
