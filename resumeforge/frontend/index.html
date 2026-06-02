@@ -1,3 +1,7 @@
+const BACKEND   = "https://resumeforge-hun8.onrender.com";
+const GOOGLE_ID = "774944689389-0mfm5dd8vg7slkcp65292dkn6nc2da7o.apps.googleusercontent.com";
+const UPI_ID    = "9088037677@ybl";
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,10 +10,9 @@
 <title>ResumeForge — AI-Powered Professional Resumes</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- Google Sign-In -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-/* ══════════════════════════════════════════════════════
-   SITE STYLES
-══════════════════════════════════════════════════════ */
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --ink:#0f0e0c;--cream:#faf8f3;--warm:#f5f0e8;
@@ -18,10 +21,18 @@
 html{scroll-behavior:smooth}
 body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink)}
 
+/* NAV */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(250,248,243,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 5%;height:64px}
 .nav-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700}
 .nav-logo span{color:var(--gold)}
-.nav-cta{background:var(--ink);color:var(--cream);border:none;padding:10px 22px;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-user{display:none;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.nav-user img{width:28px;height:28px;border-radius:50%;object-fit:cover}
+.nav-plan-badge{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:4px}
+.nav-plan-badge.free{background:var(--warm);color:var(--muted);border:1px solid var(--border)}
+.nav-plan-badge.pro{background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3)}
+.nav-logout{background:none;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.nav-login-btn{background:var(--ink);color:var(--cream);border:none;padding:9px 20px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
 
 /* HERO */
 .hero{min-height:100vh;display:flex;align-items:center;padding:80px 5% 60px;position:relative;overflow:hidden}
@@ -39,11 +50,32 @@ h1 em{color:var(--gold);font-style:italic}
 .btn-outline{background:transparent;color:var(--ink);padding:13px 26px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:border-color .15s}
 .btn-outline:hover{border-color:var(--ink)}
 
-/* BUILDER SECTION */
+/* BUILDER */
 .builder-section{padding:80px 5%;background:var(--ink);color:white}
 .sec-tag{font-size:11px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
 .sec-title{font-family:'Playfair Display',serif;font-size:clamp(26px,4vw,42px);font-weight:700;letter-spacing:-1px;margin-bottom:10px;line-height:1.1}
-.sec-sub{font-size:15px;color:#a89a7a;max-width:500px;line-height:1.65;margin-bottom:36px}
+.sec-sub{font-size:15px;color:#a89a7a;max-width:500px;line-height:1.65;margin-bottom:28px}
+
+/* Auth bar (shown when logged in) */
+.auth-bar{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px 18px;margin-bottom:24px;display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.auth-bar-left{display:flex;align-items:center;gap:10px}
+.auth-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(201,168,76,0.4)}
+.auth-avatar-initials{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3d5a47,#c9a84c);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0}
+.auth-name{font-size:14px;font-weight:500;color:white}
+.auth-sub{font-size:12px;color:#a89a7a;margin-top:1px}
+.auth-pro-badge{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:4px;margin-left:6px}
+.auth-pro-badge.free{background:rgba(255,255,255,0.08);color:#a89a7a}
+.auth-pro-badge.pro{background:rgba(201,168,76,0.2);color:var(--gold)}
+.auth-logout-btn{background:none;border:1px solid rgba(255,255,255,0.15);color:#a89a7a;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* Login prompt (shown when not logged in) */
+.login-prompt{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:24px;margin-bottom:24px;text-align:center}
+.login-prompt p{font-size:15px;color:#a89a7a;margin-bottom:18px;line-height:1.6}
+.login-prompt p strong{color:white}
+/* Google button container */
+#google-signin-btn{display:flex;justify-content:center}
+
+/* Form */
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
 .form-group{display:flex;flex-direction:column;gap:6px}
 .form-group.full{grid-column:1/-1}
@@ -52,14 +84,14 @@ input,textarea{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,2
 input::placeholder,textarea::placeholder{color:#5a5550}
 input:focus,textarea:focus{border-color:rgba(201,168,76,0.55)}
 textarea{resize:vertical;min-height:110px;line-height:1.6}
-.gen-btn{width:100%;background:var(--gold);color:var(--ink);border:none;padding:16px;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s;margin-top:6px;letter-spacing:0.2px}
+.gen-btn{width:100%;background:var(--gold);color:var(--ink);border:none;padding:16px;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s;margin-top:6px}
 .gen-btn:hover{opacity:.9}
 .gen-btn:disabled{opacity:.5;cursor:not-allowed}
 .error-box{background:rgba(184,75,47,0.18);border:1px solid rgba(184,75,47,0.35);border-radius:8px;padding:14px 16px;font-size:14px;color:#f5a080;margin-top:14px;display:none}
 .spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(15,14,12,0.2);border-top-color:var(--ink);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* OUTPUT SECTION */
+/* OUTPUT */
 .output-section{padding:52px 5%;background:#f0ece4;display:none}
 .output-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px}
 .output-bar-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:700}
@@ -73,86 +105,55 @@ textarea{resize:vertical;min-height:110px;line-height:1.6}
 .tab{padding:8px 20px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .18s}
 .tab.active{background:var(--ink);color:white}
 
-/* ══════════════════════════════════════════════════════
-   CV DOCUMENT STYLES  (these render in the PDF too)
-══════════════════════════════════════════════════════ */
+/* CV DOC */
 #cv-wrap{max-width:800px;margin:0 auto;box-shadow:0 6px 48px rgba(0,0,0,0.16);background:white}
-
-/* Top accent bar */
 .cv-accent{height:6px;background:linear-gradient(90deg,#1a1a1a 0%,#3d5a47 50%,#c9a84c 100%)}
-
-/* Header */
 .cv-head{padding:36px 44px 28px;border-bottom:1px solid #e8e4dc;display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
-.cv-head-left{}
 .cv-name{font-family:'EB Garamond',serif;font-size:34px;font-weight:600;color:#111;letter-spacing:-0.5px;line-height:1.1;margin-bottom:5px}
 .cv-title-line{font-size:13px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:#3d5a47;margin-bottom:16px}
 .cv-contact-row{display:flex;flex-wrap:wrap;gap:0}
 .cv-contact-item{font-size:12px;color:#555;display:flex;align-items:center;gap:5px;padding-right:16px;margin-bottom:5px;border-right:1px solid #ddd;margin-right:16px}
 .cv-contact-item:last-child{border-right:none;padding-right:0;margin-right:0}
-.cv-contact-item svg{flex-shrink:0}
-.cv-head-right{}
-.cv-initials{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#1a1a1a,#3d5a47);display:flex;align-items:center;justify-content:center;font-family:'EB Garamond',serif;font-size:24px;font-weight:600;color:white;letter-spacing:1px;flex-shrink:0}
-
-/* Two-column body */
+.cv-initials{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#1a1a1a,#3d5a47);display:flex;align-items:center;justify-content:center;font-family:'EB Garamond',serif;font-size:24px;font-weight:600;color:white;flex-shrink:0}
 .cv-body{display:grid;grid-template-columns:1fr 248px;gap:0}
 .cv-main{padding:28px 32px 36px 44px;border-right:1px solid #ede9e0}
 .cv-side{padding:28px 32px 36px 28px;background:#fafaf7}
-
-/* Section heading */
-.cv-sec-head{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#3d5a47;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid #c9a84c;display:flex;align-items:center;gap:8px}
-
-/* Summary */
+.cv-sec-head{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#3d5a47;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid #c9a84c}
 .cv-summary{font-family:'EB Garamond',serif;font-size:14.5px;color:#333;line-height:1.8;font-style:italic}
-
-/* Experience */
 .cv-exp-block{margin-bottom:22px;padding-bottom:22px;border-bottom:1px dashed #e0dbd0}
 .cv-exp-block:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 .cv-exp-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:2px}
 .cv-exp-role{font-size:14px;font-weight:600;color:#111;line-height:1.3}
-.cv-exp-dur{font-size:11px;color:#888;white-space:nowrap;margin-top:1px;font-weight:400}
-.cv-exp-co{font-size:12px;color:#3d5a47;font-weight:600;margin-bottom:9px;letter-spacing:0.3px}
+.cv-exp-dur{font-size:11px;color:#888;white-space:nowrap;font-weight:400;margin-top:1px}
+.cv-exp-co{font-size:12px;color:#3d5a47;font-weight:600;margin-bottom:9px}
 .cv-exp-loc{color:#888;font-weight:400}
 .cv-bullets{list-style:none;display:flex;flex-direction:column;gap:5px}
 .cv-bullets li{font-size:12.5px;color:#3a3835;line-height:1.68;padding-left:15px;position:relative;font-weight:400}
 .cv-bullets li::before{content:'▸';position:absolute;left:0;color:#c9a84c;font-size:9px;top:3px}
-
-/* Side sections */
 .cv-side-section{margin-bottom:24px}
 .cv-side-section:last-child{margin-bottom:0}
-
 .cv-edu-item{margin-bottom:14px}
-.cv-edu-item:last-child{margin-bottom:0}
 .cv-edu-deg{font-size:12.5px;font-weight:600;color:#111;line-height:1.35}
 .cv-edu-inst{font-size:11.5px;color:#3d5a47;font-weight:500;margin-top:2px}
 .cv-edu-meta{font-size:11px;color:#888;margin-top:2px}
-
 .cv-skill-group{margin-bottom:12px}
-.cv-skill-group:last-child{margin-bottom:0}
 .cv-skill-cat{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#999;margin-bottom:6px}
 .cv-skill-tags{display:flex;flex-wrap:wrap;gap:4px}
 .cv-skill-tag{background:#f0ece4;color:#333;font-size:10.5px;padding:3px 9px;border-radius:3px;font-weight:500;border:1px solid #e5e0d5}
-
 .cv-cert-list{list-style:none;display:flex;flex-direction:column;gap:7px}
 .cv-cert-list li{font-size:11.5px;color:#333;padding-left:13px;position:relative;line-height:1.45}
 .cv-cert-list li::before{content:'✓';position:absolute;left:0;color:#3d5a47;font-size:10px;font-weight:700;top:1px}
 .cv-cert-issuer{color:#888;font-size:10.5px}
-
 .cv-proj-item{margin-bottom:12px}
-.cv-proj-item:last-child{margin-bottom:0}
 .cv-proj-name{font-size:12px;font-weight:600;color:#111;margin-bottom:3px}
 .cv-proj-desc{font-size:11.5px;color:#555;line-height:1.55;margin-bottom:5px}
 .cv-proj-tech{display:flex;flex-wrap:wrap;gap:3px}
 .cv-proj-tech span{background:#e8f0eb;color:#3d5a47;font-size:10px;padding:2px 7px;border-radius:3px;font-weight:500}
-
 .cv-lang-list{display:flex;flex-direction:column;gap:5px}
 .cv-lang-item{font-size:12px;color:#333}
-
-/* Footer stripe */
 .cv-foot{height:4px;background:linear-gradient(90deg,#c9a84c,#3d5a47,#1a1a1a)}
 
-/* ══════════════════════════════════════════════════════
-   COVER LETTER DOC
-══════════════════════════════════════════════════════ */
+/* COVER LETTER */
 #cl-doc{max-width:800px;margin:0 auto;background:white;box-shadow:0 6px 48px rgba(0,0,0,0.16);display:none}
 .cl-accent{height:6px;background:linear-gradient(90deg,#1a1a1a 0%,#3d5a47 50%,#c9a84c 100%)}
 .cl-body-wrap{padding:52px 60px}
@@ -195,47 +196,47 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
 .footer-logo span{color:var(--gold)}
 .footer-copy{font-size:13px;color:var(--muted)}
 
+/* MODALS */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:white;border-radius:16px;max-width:400px;width:100%;position:relative;overflow:hidden}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#888;z-index:1}
+
+/* Payment modal */
+.pay-top{padding:28px 28px 20px;text-align:center}
+.pay-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:4px}
+.pay-desc-text{font-size:13px;color:#888;margin-bottom:8px}
+.pay-amount-text{font-family:'Playfair Display',serif;font-size:40px;font-weight:700;color:var(--gold);margin-bottom:20px}
+.pay-qr-img{width:170px;height:170px;border:1px solid var(--border);border-radius:8px;margin-bottom:14px}
+.pay-or{font-size:13px;color:#888;margin-bottom:8px}
+.pay-upi-row{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--warm);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin:0 28px 20px}
+.pay-upi-id{font-size:14px;font-weight:600;color:var(--ink)}
+.pay-copy-btn{background:var(--gold);color:var(--ink);border:none;padding:4px 10px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer}
+
+/* UTR form */
+.utr-form{background:rgba(201,168,76,0.06);border-top:1px solid rgba(201,168,76,0.2);padding:20px 28px 28px}
+.utr-title{font-size:13px;font-weight:600;color:var(--sage);margin-bottom:4px}
+.utr-sub{font-size:12px;color:#888;margin-bottom:14px;line-height:1.55}
+.utr-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.utr-input{background:var(--warm);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;color:var(--ink);width:100%}
+.utr-input:focus{border-color:var(--gold)}
+.utr-full{grid-column:1/-1}
+.utr-submit-btn{width:100%;background:var(--ink);color:white;border:none;padding:11px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;transition:background .2s}
+.utr-submit-btn:hover{background:#2a2825}
+.utr-submit-btn:disabled{opacity:.5;cursor:not-allowed}
+.utr-success{text-align:center;padding:16px 0;font-size:13px;color:#3d9e5e;font-weight:500}
+
+/* Login modal */
+.login-modal-inner{padding:36px 32px;text-align:center}
+.login-modal-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:8px}
+.login-modal-sub{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.6}
+
 @media(max-width:700px){
-  .form-grid{grid-template-columns:1fr}
+  .form-grid,.utr-grid{grid-template-columns:1fr}
   .cv-body{grid-template-columns:1fr}
   .cv-head{flex-direction:column-reverse;gap:12px}
   .cl-body-wrap{padding:32px 24px}
   .output-bar{flex-direction:column;align-items:flex-start}
 }
-
-/* PDF — hide action UI when rendering */
-.pdf-hide{transition:none}
-
-/* Auth bar (top of builder section) */
-.auth-bar{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
-.auth-bar-left{display:flex;align-items:center;gap:10px}
-.auth-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3d5a47,#c9a84c);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:white;flex-shrink:0}
-.auth-name{font-size:14px;font-weight:500;color:white}
-.auth-plan{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:4px}
-.auth-plan.free{background:rgba(255,255,255,0.08);color:#a89a7a}
-.auth-plan.pro{background:rgba(201,168,76,0.2);color:var(--gold)}
-.auth-usage{font-size:12px;color:#a89a7a}
-.auth-logout{background:none;border:1px solid rgba(255,255,255,0.15);color:#a89a7a;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif}
-
-/* Login prompt (shown when not logged in) */
-.login-prompt{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:20px;margin-bottom:20px;text-align:center}
-.login-prompt p{font-size:14px;color:#a89a7a;margin-bottom:14px}
-.login-input-row{display:flex;gap:8px;max-width:400px;margin:0 auto}
-.login-input-row input{flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px 14px;color:white;font-size:14px;font-family:'DM Sans',sans-serif;outline:none}
-.login-input-row input:focus{border-color:rgba(201,168,76,0.55)}
-.magic-btn{background:var(--gold);color:var(--ink);border:none;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
-.magic-sent{font-size:13px;color:#5dbd7e;margin-top:10px}
-
-/* Payment verification form */
-.pay-verify-wrap{padding:24px 20px;background:rgba(201,168,76,0.06);border-top:1px solid rgba(201,168,76,0.15);border-radius:0 0 12px 12px;margin-top:8px}
-.pay-verify-wrap h3{font-size:14px;font-weight:600;color:var(--gold);margin-bottom:6px}
-.pay-verify-wrap p{font-size:13px;color:#a89a7a;margin-bottom:16px;line-height:1.6}
-.pay-verify-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.pay-verify-grid input{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px 13px;color:white;font-size:13px;font-family:'DM Sans',sans-serif;outline:none}
-.pay-verify-grid input:focus{border-color:rgba(201,168,76,0.5)}
-.utr-input{grid-column:1/-1}
-.submit-utr-btn{background:var(--gold);color:var(--ink);border:none;padding:11px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
-.submit-utr-btn:disabled{opacity:.5;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -243,7 +244,16 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
 <!-- NAV -->
 <nav>
   <div class="nav-logo">Resume<span>Forge</span></div>
-  <button class="nav-cta" onclick="scroll2('builder')">Build free resume</button>
+  <div class="nav-right">
+    <div class="nav-user" id="nav-user">
+      <img id="nav-avatar" src="" alt="" style="display:none"/>
+      <div id="nav-initials-avatar" class="auth-avatar-initials" style="display:none"></div>
+      <span id="nav-name"></span>
+      <span class="nav-plan-badge free" id="nav-plan-badge">FREE</span>
+      <button class="nav-logout" onclick="logout()">Sign out</button>
+    </div>
+    <button class="nav-login-btn" id="nav-login-btn" onclick="openLoginModal()">Sign in with Google</button>
+  </div>
 </nav>
 
 <!-- HERO -->
@@ -252,7 +262,7 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
   <div class="hero-content">
     <div class="badge"><span class="badge-dot"></span> AI-powered · ATS-optimized · Beautiful PDF</div>
     <h1>A resume that actually <em>gets</em> you hired</h1>
-    <p class="hero-sub">Fill in your details. Our AI writes, designs, and formats a stunning professional CV — ready to download as PDF in 30 seconds.</p>
+    <p class="hero-sub">Sign in with Google, fill in your details, and get a stunning professional CV ready to download in 30 seconds.</p>
     <div class="hero-btns">
       <button class="btn-dark" onclick="scroll2('builder')">Build my resume — free ↓</button>
       <button class="btn-outline" onclick="scroll2('pricing')">See pricing</button>
@@ -262,28 +272,39 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
 
 <!-- BUILDER -->
 <section class="builder-section" id="builder">
-  <div class="sec-tag">Step 1 of 1</div>
+  <div class="sec-tag">Build your CV</div>
   <div class="sec-title" style="color:white">Tell us about yourself</div>
   <div class="sec-sub">The more detail you give, the better the CV. Paste your old resume, LinkedIn bio, or just describe your work history.</div>
-  <div id="auth-bar" class="auth-bar" style="display:none"></div>
 
-<div id="login-prompt" class="login-prompt" style="display:none">
-  <p>Create a free account to generate your CV — no password needed.</p>
-  <div class="login-input-row">
-    <input type="email" id="login-email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')sendMagicLink()"/>
-    <button class="magic-btn" id="magic-send-btn" onclick="sendMagicLink()">Send link →</button>
+  <!-- Auth bar (logged in) -->
+  <div class="auth-bar" id="auth-bar">
+    <div class="auth-bar-left">
+      <img class="auth-avatar" id="auth-avatar-img" src="" alt="" style="display:none"/>
+      <div class="auth-avatar-initials" id="auth-avatar-init" style="display:none"></div>
+      <div>
+        <div class="auth-name" id="auth-name-text"></div>
+        <div class="auth-sub" id="auth-sub-text"></div>
+      </div>
+    </div>
+    <button class="auth-logout-btn" onclick="logout()">Sign out</button>
   </div>
-</div>
+
+  <!-- Login prompt (not logged in) -->
+  <div class="login-prompt" id="login-prompt">
+    <p><strong>Sign in to generate your CV.</strong><br/>Free users get 2 CVs per month. Upgrade to Pro for unlimited.</p>
+    <div id="google-signin-btn"></div>
+  </div>
+
   <div class="form-grid">
     <div class="form-group"><label>Full Name</label><input id="f-name" placeholder="Aditya Kumar"/></div>
     <div class="form-group"><label>Target Role *</label><input id="f-role" placeholder="Senior Backend Engineer" required/></div>
     <div class="form-group"><label>Email</label><input id="f-email" type="email" placeholder="aditya@email.com"/></div>
     <div class="form-group"><label>Phone</label><input id="f-phone" placeholder="+91 98765 43210"/></div>
     <div class="form-group"><label>Location</label><input id="f-location" placeholder="Hyderabad, India"/></div>
-    <div class="form-group"><label>Target Company (optional)</label><input id="f-company" placeholder="Google, Swiggy, any startup…"/></div>
+    <div class="form-group"><label>Target Company (optional)</label><input id="f-company" placeholder="Google, Swiggy…"/></div>
     <div class="form-group full">
       <label>Your Experience — paste anything *</label>
-      <textarea id="f-exp" rows="7" placeholder="E.g: 4 years at TCS as Java developer. Built microservices for banking app with 2M users. Led team of 5. Worked on React dashboards. Before that did internship at startup doing Python scripts. B.Tech CSE from JNTU Hyderabad 2019. Know AWS, Docker, Spring Boot. Got AWS Solutions Architect certification last year." required></textarea>
+      <textarea id="f-exp" rows="7" placeholder="E.g: 4 years at TCS as Java developer. Built microservices for banking app with 2M users. Led team of 5. B.Tech CSE from JNTU Hyderabad 2019. Know AWS, Docker, Spring Boot. Got AWS Solutions Architect cert last year." required></textarea>
     </div>
   </div>
 
@@ -301,13 +322,10 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
       <button class="act-btn act-gold" id="dl-btn" onclick="downloadPDF()">⬇ Download PDF</button>
     </div>
   </div>
-
   <div class="tabs">
     <button class="tab active" onclick="showTab('cv',this)">📄 CV / Resume</button>
     <button class="tab" onclick="showTab('cl',this)">✉ Cover Letter</button>
   </div>
-
-  <!-- CV DOCUMENT -->
   <div id="cv-wrap">
     <div class="cv-accent"></div>
     <div class="cv-head" id="cv-head"></div>
@@ -317,8 +335,6 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
     </div>
     <div class="cv-foot"></div>
   </div>
-
-  <!-- COVER LETTER -->
   <div id="cl-doc">
     <div class="cl-accent"></div>
     <div class="cl-body-wrap" id="cl-body"></div>
@@ -330,7 +346,7 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
 <section class="pricing-sec" id="pricing">
   <div class="sec-tag">Pricing</div>
   <div class="sec-title" style="font-family:'Playfair Display',serif;font-size:clamp(26px,4vw,40px);font-weight:700;letter-spacing:-1px;margin-bottom:10px">Simple pricing</div>
-  <p style="font-size:15px;color:var(--muted)">Start free. Upgrade once you're ready to go all-in.</p>
+  <p style="font-size:15px;color:var(--muted)">Start free. Upgrade when you're ready.</p>
   <div class="plans-grid">
     <div class="plan-card">
       <div class="plan-name">Free</div><div class="plan-price">₹0</div><div class="plan-period">forever</div>
@@ -340,7 +356,7 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
     <div class="plan-card featured">
       <div class="plan-badge">Most popular</div>
       <div class="plan-name">Pro</div><div class="plan-price">₹499</div><div class="plan-period">per month</div>
-      <ul class="plan-feats"><li>Unlimited CVs</li><li>5 design templates</li><li>LinkedIn rewrite</li><li>ATS score report</li><li>Priority speed</li><li>Email support</li></ul>
+      <ul class="plan-feats"><li>Unlimited CVs</li><li>LinkedIn rewrite</li><li>ATS score report</li><li>Priority speed</li><li>Email support</li></ul>
       <button class="plan-btn" onclick="pay('pro')">Get Pro →</button>
     </div>
     <div class="plan-card">
@@ -356,152 +372,206 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
   <div class="footer-copy">© 2025 ResumeForge · Made in Hyderabad 🇮🇳</div>
 </footer>
 
+<!-- ── PAYMENT MODAL ─────────────────────────────── -->
+<div class="modal-overlay" id="pay-modal">
+  <div class="modal-box" style="max-width:420px">
+    <button class="modal-close" onclick="closeModal('pay-modal')">✕</button>
+    <div class="pay-top">
+      <div class="pay-title">Complete Payment</div>
+      <div class="pay-desc-text" id="pay-desc"></div>
+      <div class="pay-amount-text" id="pay-amount"></div>
+      <img id="pay-qr" class="pay-qr-img" src="" alt="UPI QR"/>
+      <div class="pay-or">Or pay using UPI ID</div>
+    </div>
+    <div class="pay-upi-row">
+      <span class="pay-upi-id" id="pay-upi-id"></span>
+      <button class="pay-copy-btn" onclick="copyUPI()">Copy</button>
+    </div>
+    <!-- UTR submission form -->
+    <div class="utr-form" id="utr-form-wrap">
+      <div class="utr-title">✅ Paid? Submit your UTR</div>
+      <div class="utr-sub">Enter the Transaction ID / UTR from your UPI app (Google Pay, PhonePe, Paytm). We'll verify and upgrade your account within a few hours.</div>
+      <div class="utr-grid">
+        <input class="utr-input" id="utr-name" placeholder="Your name"/>
+        <input class="utr-input" id="utr-email" type="email" placeholder="Email *"/>
+        <input class="utr-input utr-full" id="utr-code" placeholder="UTR / Transaction ID *"/>
+      </div>
+      <input type="hidden" id="utr-plan" value="pro"/>
+      <button class="utr-submit-btn" id="utr-submit-btn" onclick="submitUTR()">Submit for verification →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOGIN MODAL ──────────────────────────────── -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('login-modal')">✕</button>
+    <div class="login-modal-inner">
+      <div class="login-modal-title">Sign in to ResumeForge</div>
+      <div class="login-modal-sub">Sign in with your Google account to generate your professional CV. Free users get 2 CVs per month.</div>
+      <div id="google-signin-btn-modal"></div>
+    </div>
+  </div>
+</div>
+
 <script>
-// ── CONFIG ──────────────────────────────────────────────────
-const BACKEND = "https://resumeforge-hun8.onrender.com"; // ← your backend
-let R = null;
-let activeTab = "cv";
-let currentUser = null; // { email, name, plan, cvCount, remaining }
+// ── CONFIG ─────────────────────────────────────────────────
+const BACKEND    = "https://YOUR_BACKEND.onrender.com"; // ← update this
+const GOOGLE_ID  = "YOUR_GOOGLE_CLIENT_ID";              // ← update this
+const UPI_ID     = "yourname@upi";                       // ← update this
+const UPI_NAME   = "ResumeForge";
 
-// ── INIT ─────────────────────────────────────────────────────
+let R           = null;
+let activeTab   = "cv";
+let currentUser = null;
+
+// ── INIT ───────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
-  // Check for magic-link token in URL
-  const params = new URLSearchParams(window.location.search);
-  const token  = params.get('token');
-  if (token) await verifyMagicToken(token);
+  // Initialize Google Sign-In buttons
+  if (window.google) initGoogle();
+  else document.querySelector('script[src*="gsi"]').addEventListener('load', initGoogle);
 
-  // Load user if JWT exists
+  // Auto-login from saved JWT
   const jwt = localStorage.getItem('rf_token');
-  if (jwt) await loadUser(jwt);
-  else      renderAuthUI(null);
+  if (jwt) {
+    try {
+      const res  = await fetch(`${BACKEND}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${jwt}` }
+      });
+      if (res.ok) {
+        currentUser = await res.json();
+        renderAuth(currentUser);
+      } else {
+        localStorage.removeItem('rf_token');
+        renderAuth(null);
+      }
+    } catch { renderAuth(null); }
+  } else {
+    renderAuth(null);
+  }
 });
 
-// ── AUTH ─────────────────────────────────────────────────────
-async function verifyMagicToken(token) {
-  try {
-    const res  = await fetch(`${BACKEND}/api/auth/verify?token=${token}`);
-    const data = await res.json();
-    if (data.success) {
-      localStorage.setItem('rf_token', data.token);
-      // Clean URL
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  } catch(e) { console.error("Token verify failed", e); }
+function initGoogle() {
+  const cfg = {
+    client_id: GOOGLE_ID,
+    callback:  handleGoogleSignIn,
+    auto_select: false,
+  };
+  google.accounts.id.initialize(cfg);
+
+  // Button in builder section
+  google.accounts.id.renderButton(
+    document.getElementById('google-signin-btn'),
+    { theme:'outline', size:'large', text:'signin_with', shape:'rectangular', width: 320 }
+  );
+  // Button in login modal
+  google.accounts.id.renderButton(
+    document.getElementById('google-signin-btn-modal'),
+    { theme:'outline', size:'large', text:'signin_with', shape:'rectangular', width: 280 }
+  );
 }
 
-async function loadUser(jwt) {
+async function handleGoogleSignIn(response) {
   try {
-    const res  = await fetch(`${BACKEND}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${jwt}` }
+    const res  = await fetch(`${BACKEND}/api/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential: response.credential })
     });
-    if (!res.ok) { localStorage.removeItem('rf_token'); renderAuthUI(null); return; }
-    currentUser = await res.json();
-    renderAuthUI(currentUser);
-  } catch(e) { renderAuthUI(null); }
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || 'Login failed');
+
+    localStorage.setItem('rf_token', data.token);
+    currentUser = data.user;
+    renderAuth(currentUser);
+    closeModal('login-modal');
+
+    // Pre-fill email if empty
+    if (!document.getElementById('f-email').value && currentUser.email) {
+      document.getElementById('f-email').value = currentUser.email;
+    }
+    if (!document.getElementById('f-name').value && currentUser.name) {
+      document.getElementById('f-name').value = currentUser.name;
+    }
+  } catch(e) {
+    alert('Sign-in failed: ' + e.message);
+  }
 }
 
-function renderAuthUI(user) {
+function renderAuth(user) {
   const loginPrompt = document.getElementById('login-prompt');
   const authBar     = document.getElementById('auth-bar');
+  const navUser     = document.getElementById('nav-user');
+  const navLoginBtn = document.getElementById('nav-login-btn');
 
   if (!user) {
     loginPrompt.style.display = 'block';
     authBar.style.display     = 'none';
+    navUser.style.display     = 'none';
+    navLoginBtn.style.display = 'block';
     return;
   }
 
+  // Hide login prompt, show auth bar
   loginPrompt.style.display = 'none';
   authBar.style.display     = 'flex';
+  navUser.style.display     = 'flex';
+  navLoginBtn.style.display = 'none';
 
-  const initials = (user.name||user.email).split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || user.email[0].toUpperCase();
-  const isPro    = user.plan === 'pro';
-  const usage    = isPro
-    ? 'Unlimited CVs'
-    : `${user.remaining} of ${user.cvLimit} free CVs remaining this month`;
+  const isPro = user.plan === 'pro';
+  const usageText = isPro
+    ? 'Pro plan — unlimited CVs'
+    : `${user.remaining ?? 0} of ${user.cvLimit ?? 2} free CVs remaining this month`;
 
-  document.getElementById('auth-bar').innerHTML = `
-    <div class="auth-bar-left">
-      <div class="auth-avatar">${initials}</div>
-      <div>
-        <div class="auth-name">${user.name||user.email} <span class="auth-plan ${isPro?'pro':'free'}">${isPro?'PRO':'FREE'}</span></div>
-        <div class="auth-usage">${usage}</div>
-      </div>
-    </div>
-    <button class="auth-logout" onclick="logout()">Sign out</button>`;
-}
+  // Auth bar
+  const initials = getInitials(user.name || user.email);
+  if (user.picture) {
+    document.getElementById('auth-avatar-img').src     = user.picture;
+    document.getElementById('auth-avatar-img').style.display = 'block';
+    document.getElementById('auth-avatar-init').style.display = 'none';
+  } else {
+    document.getElementById('auth-avatar-init').textContent   = initials;
+    document.getElementById('auth-avatar-init').style.display = 'flex';
+    document.getElementById('auth-avatar-img').style.display  = 'none';
+  }
+  document.getElementById('auth-name-text').innerHTML = `${user.name || user.email} <span class="auth-pro-badge ${isPro?'pro':'free'}">${isPro?'PRO':'FREE'}</span>`;
+  document.getElementById('auth-sub-text').textContent = usageText;
 
-async function sendMagicLink() {
-  const emailEl = document.getElementById('login-email');
-  const email   = emailEl.value.trim();
-  if (!email || !email.includes('@')) { alert('Enter a valid email.'); return; }
-
-  const btn = document.getElementById('magic-send-btn');
-  btn.disabled = true; btn.textContent = 'Sending…';
-
-  try {
-    const res  = await fetch(`${BACKEND}/api/auth/magic`, {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ email })
-    });
-    const data = await res.json();
-    if (data.success) {
-      document.getElementById('magic-email-shown').textContent = email;
-      document.getElementById('magic-overlay').style.display   = 'flex';
-    } else {
-      alert(data.error || 'Failed to send link.');
-    }
-  } catch { alert('Cannot reach server.'); }
-
-  btn.disabled = false; btn.textContent = 'Send link →';
+  // Nav bar
+  if (user.picture) {
+    document.getElementById('nav-avatar').src = user.picture;
+    document.getElementById('nav-avatar').style.display = 'block';
+    document.getElementById('nav-initials-avatar').style.display = 'none';
+  } else {
+    document.getElementById('nav-initials-avatar').textContent   = initials;
+    document.getElementById('nav-initials-avatar').style.display = 'flex';
+    document.getElementById('nav-avatar').style.display          = 'none';
+  }
+  document.getElementById('nav-name').textContent = user.name?.split(' ')[0] || user.email;
+  const badge = document.getElementById('nav-plan-badge');
+  badge.textContent  = isPro ? 'PRO' : 'FREE';
+  badge.className    = `nav-plan-badge ${isPro?'pro':'free'}`;
 }
 
 function logout() {
   localStorage.removeItem('rf_token');
   currentUser = null;
-  renderAuthUI(null);
+  renderAuth(null);
+  if (window.google) google.accounts.id.disableAutoSelect();
 }
 
-// ── PAYMENT VERIFY FORM ──────────────────────────────────────
-async function submitUTR(plan) {
-  const email = document.getElementById('utr-email').value.trim();
-  const name  = document.getElementById('utr-name').value.trim();
-  const utr   = document.getElementById('utr-code').value.trim();
-  const btn   = document.getElementById('submit-utr-btn');
-
-  if (!email || !utr) { alert('Email and UTR/Transaction ID are required.'); return; }
-
-  btn.disabled = true; btn.textContent = 'Submitting…';
-
-  try {
-    const res  = await fetch(`${BACKEND}/api/payment/submit`, {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ email, name, utr, plan })
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      document.getElementById('pay-verify-form').innerHTML = `
-        <div style="text-align:center;padding:16px 0;color:#5dbd7e;font-size:14px">
-          ✓ Submitted! We'll verify your payment and email you within a few hours.
-        </div>`;
-    } else {
-      alert(data.error || 'Submission failed.');
-      btn.disabled = false; btn.textContent = 'Submit for verification';
-    }
-  } catch {
-    alert('Cannot reach server.');
-    btn.disabled = false; btn.textContent = 'Submit for verification';
-  }
+function openLoginModal() {
+  document.getElementById('login-modal').style.display = 'flex';
 }
 
-// ── GENERATE ─────────────────────────────────────────────────
+// ── GENERATE ───────────────────────────────────────────────
 async function generate() {
   const exp  = document.getElementById('f-exp').value.trim();
   const role = document.getElementById('f-role').value.trim();
   if (!exp || !role) { alert('Please fill in your Experience and Target Role.'); return; }
 
   const jwt = localStorage.getItem('rf_token');
-  if (!jwt) { alert('Please log in first to generate your CV.'); scroll2('builder'); return; }
+  if (!jwt) { openLoginModal(); return; }
 
   const btn = document.getElementById('gen-btn');
   const err = document.getElementById('err');
@@ -525,15 +595,9 @@ async function generate() {
     const data = await res.json();
 
     if (!res.ok || !data.resume) {
-      // If limit reached, show upgrade nudge
-      if (res.status === 429) {
-        err.innerHTML = `⚠ ${data.error} <a href="#pricing" style="color:var(--gold)">See pricing ↓</a>`;
-      } else if (res.status === 401) {
-        err.textContent = '⚠ Session expired. Please log in again.';
-        logout();
-      } else {
-        err.textContent = '⚠ ' + (data.error || 'Generation failed.');
-      }
+      if (res.status === 401) { logout(); err.textContent = '⚠ Session expired. Please sign in again.'; }
+      else if (res.status === 429) { err.innerHTML = `⚠ ${data.error} <a href="#pricing" style="color:var(--gold)">Upgrade →</a>`; }
+      else { err.textContent = '⚠ ' + (data.error || 'Generation failed.'); }
       err.style.display = 'block';
       btn.disabled = false; btn.innerHTML = '✦ Try again';
       return;
@@ -542,11 +606,11 @@ async function generate() {
     R = data.resume;
     renderCV(R); renderCL(R);
 
-    // Update usage counter display
+    // Update usage display
     if (data.usage && currentUser) {
       currentUser.cvCount   = data.usage.cvCount;
       currentUser.remaining = data.usage.remaining;
-      renderAuthUI(currentUser);
+      renderAuth(currentUser);
     }
 
     const out = document.getElementById('output-section');
@@ -554,109 +618,250 @@ async function generate() {
     setTimeout(() => out.scrollIntoView({ behavior: 'smooth' }), 100);
     btn.disabled = false; btn.innerHTML = '✦ Regenerate CV';
   } catch(e) {
-    err.textContent = '⚠ Cannot reach server. Is the backend running at ' + BACKEND + '?';
+    err.textContent = '⚠ Cannot reach server at ' + BACKEND;
     err.style.display = 'block';
     btn.disabled = false; btn.innerHTML = '✦ Try again';
   }
 }
 
-// ── PAY MODAL (with UTR form added) ──────────────────────────
+// ── PAY MODAL ──────────────────────────────────────────────
 function pay(plan) {
   const amount = plan === 'pro' ? '499' : '199';
-  const desc   = plan === 'pro' ? 'ResumeForge Pro Monthly' : 'ResumeForge Single CV';
-  const upiId  = '9088037677@ibl';
+  const desc   = plan === 'pro' ? 'ResumeForge Pro — 1 Month' : 'ResumeForge Single CV';
 
-  document.getElementById('pay-amount').textContent = '₹' + amount;
   document.getElementById('pay-desc').textContent   = desc;
-  document.getElementById('pay-upi').textContent    = upiId;
-  document.getElementById('pay-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=${upiId}%26pn=ResumeForge%26am=${amount}%26cu=INR%26tn=${encodeURIComponent(desc)}`;
+  document.getElementById('pay-amount').textContent = '₹' + amount;
+  document.getElementById('pay-upi-id').textContent = UPI_ID;
+  document.getElementById('utr-plan').value         = plan;
 
-  // Fill email if logged in
-  const email = currentUser?.email || '';
-  document.getElementById('utr-email').value = email;
-  document.getElementById('utr-name').value  = currentUser?.name || '';
-  document.getElementById('current-plan').value = plan;
+  // Generate QR
+  const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=${encodeURIComponent(desc)}`;
+  document.getElementById('pay-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=${encodeURIComponent(upiLink)}`;
 
-  // Reset form
-  document.getElementById('pay-verify-form').innerHTML = getUTRFormHTML();
+  // Pre-fill user email
+  if (currentUser) {
+    document.getElementById('utr-email').value = currentUser.email || '';
+    document.getElementById('utr-name').value  = currentUser.name || '';
+  }
 
+  // Reset UTR form
+  document.getElementById('utr-form-wrap').innerHTML = getUTRFormHTML();
   document.getElementById('pay-modal').style.display = 'flex';
 }
 
 function getUTRFormHTML() {
   return `
-    <div class="pay-verify-wrap" id="pay-verify-form">
-      <h3>Paid? Submit your UTR to get verified</h3>
-      <p>After paying, enter the UTR / Transaction ID from your UPI app (Google Pay, PhonePe, Paytm etc.) We'll verify within a few hours and email you.</p>
-      <div class="pay-verify-grid">
-        <input id="utr-name"  placeholder="Your name" />
-        <input id="utr-email" type="email" placeholder="Your email *" required />
-        <input id="utr-code"  class="utr-input" placeholder="UTR / Transaction ID (e.g. 426112345678)" />
+    <div class="utr-title">✅ Paid? Submit your UTR</div>
+    <div class="utr-sub">Enter the Transaction ID / UTR from your UPI app (Google Pay, PhonePe, Paytm). We'll verify and upgrade your account within a few hours.</div>
+    <div class="utr-grid">
+      <input class="utr-input" id="utr-name" placeholder="Your name" value="${currentUser?.name||''}"/>
+      <input class="utr-input" id="utr-email" type="email" placeholder="Email *" value="${currentUser?.email||''}"/>
+      <input class="utr-input utr-full" id="utr-code" placeholder="UTR / Transaction ID *"/>
+    </div>
+    <input type="hidden" id="utr-plan" value="pro"/>
+    <button class="utr-submit-btn" id="utr-submit-btn" onclick="submitUTR()">Submit for verification →</button>`;
+}
+
+async function submitUTR() {
+  const email = document.getElementById('utr-email').value.trim();
+  const name  = document.getElementById('utr-name').value.trim();
+  const utr   = document.getElementById('utr-code').value.trim();
+  const plan  = document.getElementById('utr-plan').value;
+  const btn   = document.getElementById('utr-submit-btn');
+
+  if (!email || !utr) { alert('Email and UTR are required.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Submitting…';
+
+  try {
+    const res  = await fetch(`${BACKEND}/api/payment/submit`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, utr, plan })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('utr-form-wrap').innerHTML = `
+        <div class="utr-success">
+          ✓ Submitted successfully!<br/>
+          <span style="color:#888;font-size:12px;font-weight:400">We'll verify your payment and upgrade your account within a few hours. Check your email.</span>
+        </div>`;
+    } else {
+      alert(data.error || 'Submission failed.');
+      btn.disabled = false; btn.textContent = 'Submit for verification →';
+    }
+  } catch {
+    alert('Cannot reach server.');
+    btn.disabled = false; btn.textContent = 'Submit for verification →';
+  }
+}
+
+function copyUPI() {
+  navigator.clipboard.writeText(UPI_ID).then(() => {
+    const btn = document.querySelector('.pay-copy-btn');
+    btn.textContent = '✓ Copied'; setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.style.display = 'none'; });
+});
+
+// ── CV RENDER ──────────────────────────────────────────────
+function icon(p){ return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`; }
+const ICONS = {
+  mail:  icon('<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline>'),
+  phone: icon('<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.64A2 2 0 012 .95h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 15z"></path>'),
+  loc:   icon('<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path><circle cx="12" cy="10" r="3"></circle>'),
+  link:  icon('<path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"></path>'),
+};
+
+function getInitials(name) {
+  return (name||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+}
+
+function renderCV(r) {
+  const contacts = [
+    r.email    && `<span class="cv-contact-item">${ICONS.mail}${r.email}</span>`,
+    r.phone    && `<span class="cv-contact-item">${ICONS.phone}${r.phone}</span>`,
+    r.location && `<span class="cv-contact-item">${ICONS.loc}${r.location}</span>`,
+    r.linkedin && `<span class="cv-contact-item">${ICONS.link}${r.linkedin}</span>`,
+  ].filter(Boolean).join('');
+
+  document.getElementById('cv-head').innerHTML = `
+    <div>
+      <div class="cv-name">${r.name||'Your Name'}</div>
+      <div class="cv-title-line">${r.title||''}</div>
+      <div class="cv-contact-row">${contacts}</div>
+    </div>
+    <div class="cv-initials">${getInitials(r.name)}</div>`;
+
+  const expHTML = (r.experience||[]).map(e=>`
+    <div class="cv-exp-block">
+      <div class="cv-exp-top">
+        <div class="cv-exp-role">${e.role||''}</div>
+        <div class="cv-exp-dur">${e.duration||''}</div>
       </div>
-      <input type="hidden" id="current-plan" value="pro"/>
-      <button class="submit-utr-btn" id="submit-utr-btn" onclick="submitUTR(document.getElementById('current-plan').value)">
-        Submit for verification →
-      </button>
+      <div class="cv-exp-co">${e.company||''}${e.location?` <span class="cv-exp-loc">· ${e.location}</span>`:''}</div>
+      <ul class="cv-bullets">${(e.bullets||[]).map(b=>`<li>${b}</li>`).join('')}</ul>
+    </div>`).join('');
+
+  const projHTML = (r.projects||[]).length ? `
+    <div style="margin-top:24px">
+      <div class="cv-sec-head">Notable Projects</div>
+      ${(r.projects||[]).map(p=>`
+        <div class="cv-proj-item">
+          <div class="cv-proj-name">${p.name||''}</div>
+          <div class="cv-proj-desc">${p.description||''}</div>
+          <div class="cv-proj-tech">${(p.tech||[]).map(t=>`<span>${t}</span>`).join('')}</div>
+        </div>`).join('')}
+    </div>` : '';
+
+  document.getElementById('cv-main').innerHTML = `
+    <div style="margin-bottom:24px">
+      <div class="cv-sec-head">Professional Summary</div>
+      <div class="cv-summary">${r.summary||''}</div>
+    </div>
+    <div>
+      <div class="cv-sec-head">Experience</div>
+      ${expHTML}
+    </div>${projHTML}`;
+
+  const eduHTML = (r.education||[]).map(e=>`
+    <div class="cv-edu-item">
+      <div class="cv-edu-deg">${e.degree||''}</div>
+      <div class="cv-edu-inst">${e.institution||''}</div>
+      <div class="cv-edu-meta">${e.year||''}${e.gpa?' · '+e.gpa:''}</div>
+    </div>`).join('');
+
+  const techTags = (r.skills?.technical||[]).map(s=>`<span class="cv-skill-tag">${s}</span>`).join('');
+  const softTags = (r.skills?.soft||[]).map(s=>`<span class="cv-skill-tag">${s}</span>`).join('');
+
+  const certHTML = (r.certifications||[]).map(c=>{
+    const nm = typeof c==='string'?c:c.name;
+    const is = typeof c==='object'&&c.issuer?` · <span class="cv-cert-issuer">${c.issuer}${c.year?' '+c.year:''}</span>`:'';
+    return `<li>${nm}${is}</li>`;
+  }).join('');
+
+  const langHTML = (r.languages||[]).map(l=>`<div class="cv-lang-item">• ${l}</div>`).join('');
+
+  document.getElementById('cv-side').innerHTML = `
+    <div class="cv-side-section">
+      <div class="cv-sec-head">Education</div>
+      ${eduHTML||'<div style="font-size:12px;color:#888">Not provided</div>'}
+    </div>
+    ${techTags||softTags?`<div class="cv-side-section">
+      <div class="cv-sec-head">Skills</div>
+      ${techTags?`<div class="cv-skill-group"><div class="cv-skill-cat">Technical</div><div class="cv-skill-tags">${techTags}</div></div>`:''}
+      ${softTags?`<div class="cv-skill-group"><div class="cv-skill-cat">Soft Skills</div><div class="cv-skill-tags">${softTags}</div></div>`:''}
+    </div>`:''}
+    ${certHTML?`<div class="cv-side-section"><div class="cv-sec-head">Certifications</div><ul class="cv-cert-list">${certHTML}</ul></div>`:''}
+    ${langHTML?`<div class="cv-side-section"><div class="cv-sec-head">Languages</div><div class="cv-lang-list">${langHTML}</div></div>`:''}`;
+}
+
+function renderCL(r) {
+  const today = new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+  const role  = document.getElementById('f-role').value.trim();
+  const co    = document.getElementById('f-company').value.trim();
+  const paras = (r.coverLetter||'').split(/\n+/).filter(p=>p.trim()).map(p=>`<p>${p.trim()}</p>`).join('');
+  document.getElementById('cl-body').innerHTML = `
+    <div class="cl-header">
+      <div class="cl-from-name">${r.name||'Your Name'}</div>
+      <div class="cl-from-contact">
+        ${r.email?`<span>${r.email}</span>`:''}
+        ${r.phone?`<span>${r.phone}</span>`:''}
+        ${r.location?`<span>${r.location}</span>`:''}
+      </div>
+    </div>
+    <div class="cl-date">${today}</div>
+    <div class="cl-to">Hiring Manager<br/>${co||'[Company Name]'}<br/>${r.location||''}</div>
+    <div class="cl-subject">Re: Application for ${role||'the position'}</div>
+    <div class="cl-paras">${paras}</div>
+    <div class="cl-sign">
+      <div class="cl-sign-warm">Warm regards,</div>
+      <div class="cl-sign-name">${r.name||'Your Name'}</div>
+      <div class="cl-sign-title">${r.title||''}</div>
     </div>`;
 }
 
-// ── REST OF YOUR EXISTING CODE (unchanged) ────────────────────
-function scroll2(id){ document.getElementById(id).scrollIntoView({behavior:'smooth'}) }
-
-function icon(path){ return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`; }
-const ICONS = {
-  mail: icon('<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline>'),
-  phone: icon('<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.64A2 2 0 012 .95h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 15z"></path>'),
-  loc:  icon('<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"></path><circle cx="12" cy="10" r="3"></circle>'),
-  link: icon('<path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"></path>'),
-  globe:icon('<circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"></path>'),
-};
-
-function initials(name){
-  return (name||'CV').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+function showTab(tab, el) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('cv-wrap').style.display = tab==='cv'?'block':'none';
+  document.getElementById('cl-doc').style.display  = tab==='cl'?'block':'none';
+  document.getElementById('dl-btn').textContent    = tab==='cv'?'⬇ Download CV PDF':'⬇ Download Cover Letter PDF';
 }
 
-// renderCV, renderCL, showTab, downloadPDF, copyText stay EXACTLY the same as your current code.
-// (Not repeated here to keep this file focused on the additions.)
+function downloadPDF() {
+  if (!R) return;
+  const el = activeTab==='cv' ? document.getElementById('cv-wrap') : document.getElementById('cl-doc');
+  const fname = (R.name||'resume').replace(/\s+/g,'-').toLowerCase();
+  const filename = activeTab==='cv' ? `${fname}-cv.pdf` : `${fname}-cover-letter.pdf`;
+  const wasHidden = el.style.display === 'none';
+  if (wasHidden) el.style.display = 'block';
+  html2pdf().set({
+    margin:[8,8,8,8], filename,
+    image:{type:'jpeg',quality:0.98},
+    html2canvas:{scale:2,useCORS:true,letterRendering:true},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  }).from(el).save().then(() => { if (wasHidden) el.style.display = 'none'; });
+}
+
+function copyText() {
+  if (!R) return;
+  let t = activeTab === 'cv'
+    ? `${R.name||''}\n${R.title||''}\n${[R.email,R.phone,R.location].filter(Boolean).join(' | ')}\n\nPROFESSIONAL SUMMARY\n${R.summary||''}\n\nEXPERIENCE\n${(R.experience||[]).map(e=>`${e.role} — ${e.company} (${e.duration})\n${(e.bullets||[]).map(b=>`  • ${b}`).join('\n')}`).join('\n\n')}\n\nSKILLS\n${(R.skills?.technical||[]).join(', ')}\n\nEDUCATION\n${(R.education||[]).map(e=>`${e.degree} — ${e.institution} (${e.year})`).join('\n')}`
+    : (R.coverLetter||'');
+  navigator.clipboard.writeText(t).then(() => {
+    const b = event.target; b.textContent = '✓ Copied!';
+    setTimeout(() => b.textContent = '⧉ Copy as text', 2000);
+  });
+}
+
+function scroll2(id) { document.getElementById(id).scrollIntoView({behavior:'smooth'}); }
 </script>
-
-<!-- PAYMENT MODAL -->
-<div id="pay-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;align-items:center;justify-content:center;padding:20px">
-  <div style="background:white;border-radius:16px;padding:36px;max-width:380px;width:100%;text-align:center;position:relative">
-    
-    <button onclick="document.getElementById('pay-modal').style.display='none'" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#888">✕</button>
-    
-    <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:4px">Complete Payment</div>
-    <div id="pay-desc" style="font-size:13px;color:#888;margin-bottom:6px"></div>
-    <div id="pay-amount" style="font-family:'Playfair Display',serif;font-size:40px;font-weight:700;color:#c9a84c;margin-bottom:20px"></div>
-
-    <img id="pay-qr" src="" alt="UPI QR Code" style="width:180px;height:180px;border:1px solid #e5e0d5;border-radius:8px;margin-bottom:16px"/>
-    
-    <div style="font-size:13px;color:#555;margin-bottom:8px">Or pay using UPI ID</div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;background:#f5f0e8;border:1px solid #e5e0d5;border-radius:8px;padding:10px 14px;margin-bottom:16px">
-      <span id="pay-upi" style="font-size:14px;font-weight:600;color:#0f0e0c"></span>
-      <button onclick="navigator.clipboard.writeText(document.getElementById('pay-upi').textContent).then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='Copy',2000)})" style="background:#c9a84c;color:#0f0e0c;border:none;padding:4px 10px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer">Copy</button>
-    </div>
-
-    <div style="font-size:12px;color:#888;line-height:1.6;margin-bottom:20px">
-      1. Scan QR or copy UPI ID<br/>
-      2. Pay the amount shown<br/>
-    </div>
-
-    <button onclick="document.getElementById('pay-modal').style.display='none'" style="width:100%;background:#0f0e0c;color:white;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer">I've made the payment</button>
-  </div>
-</div>
-
-<!-- Login modal / magic link verify overlay -->
-<div id="magic-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center">
-  <div style="background:#1a1917;border:1px solid #2a2a28;border-radius:14px;padding:36px;width:380px;max-width:95vw;text-align:center">
-    <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:8px">Check your inbox</div>
-    <p style="font-size:14px;color:#a89a7a;line-height:1.65;margin-bottom:24px">We sent a magic login link to <strong id="magic-email-shown" style="color:white"></strong>.<br/>Click it and you'll be logged in instantly.</p>
-    <button onclick="document.getElementById('magic-overlay').style.display='none'" style="background:rgba(255,255,255,0.08);border:none;color:#a89a7a;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">Close</button>
-  </div>
-</div>
-
-
-
 </body>
 </html>
