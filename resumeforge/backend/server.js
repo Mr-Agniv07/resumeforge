@@ -79,6 +79,47 @@ const PLANS = {
   pro:    { amount: 499, credits: 0,  lifetime: true,  label: "Pro (Lifetime)"   },
 };
 
+// ── Profession-specific resume tailoring ──────────────────────
+// `field` from the frontend selects how Claude specializes the resume.
+const PROFESSIONS = {
+  engineering: {
+    label: "Engineering / Technology",
+    guidance: "Tailor for a software/IT/engineering role. Lead with a strong technical skills list (languages, frameworks, cloud, tools). Quantify engineering impact (latency, scale, uptime, cost). Highlight system/architecture ownership and projects with explicit tech stacks. Surface certs like AWS/GCP/Azure/PMP. Use precise verbs: architected, optimized, automated, deployed.",
+  },
+  medical: {
+    label: "Medical / Healthcare",
+    guidance: "Tailor for a clinical/medical role. Emphasize clinical experience, specialty, patient outcomes, procedures performed, and hospital/clinic affiliations. Put medical degrees (MBBS, MD, DNB), council registration/license, residencies, fellowships, and research/publications prominently in certifications/education. The technical skills must be CLINICAL competencies (e.g., diagnostics, procedures, EMR), never generic IT skills.",
+  },
+  legal: {
+    label: "Legal / Law",
+    guidance: "Tailor for a legal/law role. Emphasize practice areas (litigation, corporate, IP, criminal), bar council enrollment, jurisdictions, drafting, legal research, advocacy, and negotiations. Reference notable matters at a high level without breaching confidentiality. Degrees: LLB/LLM. The technical skills must be LEGAL competencies.",
+  },
+  teaching: {
+    label: "Teaching / Education",
+    guidance: "Tailor for a teaching/education role. Emphasize subjects and grade levels taught, pedagogy, classroom management, curriculum design, and measurable student outcomes. Surface B.Ed/M.Ed and teaching certifications (TET/CTET/NET). The technical skills must be TEACHING competencies.",
+  },
+  finance: {
+    label: "Finance / Accounting",
+    guidance: "Tailor for a finance/accounting role. Emphasize financial analysis, reporting, auditing, budgeting, taxation, and compliance. Tools: Excel, SAP, Tally, ERP. Certs: CA, CFA, CPA, ACCA. Quantify results (cost savings, revenue, accuracy). The technical skills must be FINANCE competencies.",
+  },
+  business: {
+    label: "Business / Management",
+    guidance: "Tailor for a business/management role. Emphasize leadership, P&L ownership, strategy, operations, stakeholder management, team size led, and quantified business outcomes (growth %, revenue, efficiency). Surface MBA/management credentials.",
+  },
+  design: {
+    label: "Design / Creative",
+    guidance: "Tailor for a design/creative role. Use a portfolio-oriented narrative. Emphasize design tools (Figma, Adobe CC), UX/UI process, brand/visual work, and measurable impact (engagement, conversion). The technical skills must be design tools and methods.",
+  },
+  sales: {
+    label: "Sales / Marketing",
+    guidance: "Tailor for a sales/marketing role. Lead with quota attainment, revenue/pipeline generated, growth metrics, campaigns, CRM tools, and client relationships. Every bullet should be commercially quantified.",
+  },
+  general: {
+    label: "General / Other",
+    guidance: "Write a strong, well-rounded professional resume tailored closely to the target role.",
+  },
+};
+
 // ── Helpers ───────────────────────────────────────────────────
 function signJWT(user) {
   return jwt.sign(
@@ -337,7 +378,8 @@ app.patch("/api/admin/users/:id/downgrade", requireAdmin, async (req, res) => {
 //  CORE — POST /api/generate
 // ════════════════════════════════════════════════════════════
 app.post("/api/generate", requireAuth, async (req, res) => {
-  const { experience, role, company, name, email, phone, location } = req.body;
+  const { experience, role, company, name, email, phone, location, field } = req.body;
+  const prof = PROFESSIONS[field] || PROFESSIONS.general;
 
   if (!experience || !role) return res.status(400).json({ error: "experience and role are required." });
   if (experience.length > 4000) return res.status(400).json({ error: "Experience text too long (max 4000 chars)." });
@@ -364,7 +406,9 @@ app.post("/api/generate", requireAuth, async (req, res) => {
     });
   }
 
-  const prompt = `You are an expert resume writer. Create a complete professional resume for someone targeting "${role}"${company ? ` at ${company}` : ""}.
+  const prompt = `You are an expert resume writer specializing in the ${prof.label} field. Create a complete professional resume for someone targeting "${role}"${company ? ` at ${company}` : ""}.
+
+FIELD FOCUS — ${prof.label}: ${prof.guidance}
 
 Candidate: ${name||"Candidate"} | ${email||""} | ${phone||""} | ${location||""}
 Experience: ${experience}
