@@ -85,38 +85,47 @@ const PROFESSIONS = {
   engineering: {
     label: "Engineering / Technology",
     guidance: "Tailor for a software/IT/engineering role. Lead with a strong technical skills list (languages, frameworks, cloud, tools). Quantify engineering impact (latency, scale, uptime, cost). Highlight system/architecture ownership and projects with explicit tech stacks. Surface certs like AWS/GCP/Azure/PMP. Use precise verbs: architected, optimized, automated, deployed.",
+    sections: ["Open-Source & Side Projects", "Technical Achievements"],
   },
   medical: {
     label: "Medical / Healthcare",
     guidance: "Tailor for a clinical/medical role. Emphasize clinical experience, specialty, patient outcomes, procedures performed, and hospital/clinic affiliations. Put medical degrees (MBBS, MD, DNB), council registration/license, residencies, fellowships, and research/publications prominently in certifications/education. The technical skills must be CLINICAL competencies (e.g., diagnostics, procedures, EMR), never generic IT skills.",
+    sections: ["Licenses & Registrations", "Publications & Research", "Clinical Procedures"],
   },
   legal: {
     label: "Legal / Law",
     guidance: "Tailor for a legal/law role. Emphasize practice areas (litigation, corporate, IP, criminal), bar council enrollment, jurisdictions, drafting, legal research, advocacy, and negotiations. Reference notable matters at a high level without breaching confidentiality. Degrees: LLB/LLM. The technical skills must be LEGAL competencies.",
+    sections: ["Bar Admissions & Enrollment", "Notable Matters", "Practice Areas"],
   },
   teaching: {
     label: "Teaching / Education",
     guidance: "Tailor for a teaching/education role. Emphasize subjects and grade levels taught, pedagogy, classroom management, curriculum design, and measurable student outcomes. Surface B.Ed/M.Ed and teaching certifications (TET/CTET/NET). The technical skills must be TEACHING competencies.",
+    sections: ["Publications & Workshops", "Awards & Achievements"],
   },
   finance: {
     label: "Finance / Accounting",
     guidance: "Tailor for a finance/accounting role. Emphasize financial analysis, reporting, auditing, budgeting, taxation, and compliance. Tools: Excel, SAP, Tally, ERP. Certs: CA, CFA, CPA, ACCA. Quantify results (cost savings, revenue, accuracy). The technical skills must be FINANCE competencies.",
+    sections: ["Licenses & Memberships", "Key Achievements"],
   },
   business: {
     label: "Business / Management",
     guidance: "Tailor for a business/management role. Emphasize leadership, P&L ownership, strategy, operations, stakeholder management, team size led, and quantified business outcomes (growth %, revenue, efficiency). Surface MBA/management credentials.",
+    sections: ["Key Achievements", "Leadership Highlights"],
   },
   design: {
     label: "Design / Creative",
-    guidance: "Tailor for a design/creative role. Use a portfolio-oriented narrative. Emphasize design tools (Figma, Adobe CC), UX/UI process, brand/visual work, and measurable impact (engagement, conversion). The technical skills must be design tools and methods.",
+    guidance: "Tailor for a design/creative role. Use a portfolio-oriented narrative. Emphasize design tools (Figma, Adobe CC), UX/UI process, brand/visual work, and measurable impact (engagement, conversion). The technical skills must be design tools and methods. Always include a portfolio URL.",
+    sections: ["Portfolio Highlights", "Awards & Recognition"],
   },
   sales: {
     label: "Sales / Marketing",
     guidance: "Tailor for a sales/marketing role. Lead with quota attainment, revenue/pipeline generated, growth metrics, campaigns, CRM tools, and client relationships. Every bullet should be commercially quantified.",
+    sections: ["Key Accounts & Wins", "Awards & Recognition"],
   },
   general: {
     label: "General / Other",
     guidance: "Write a strong, well-rounded professional resume tailored closely to the target role.",
+    sections: ["Key Achievements"],
   },
 };
 
@@ -450,10 +459,16 @@ Return ONLY raw JSON (no markdown, no backticks, no explanation):
     { "name": "Project Name", "description": "What it does + tech stack + impact/scale", "tech": ["Tech1","Tech2","Tech3"] }
   ],
   "languages": ["English (Fluent)", "Hindi (Native)"],
-  "coverLetter": "Full 3-paragraph cover letter. Para1: enthusiasm for role and company. Para2: 2-3 specific achievements matching the role. Para3: confident call to action."
+  "coverLetter": "Full 3-paragraph cover letter. Para1: enthusiasm for role and company. Para2: 2-3 specific achievements matching the role. Para3: confident call to action.",
+  "extraSections": [
+    { "heading": "Field-specific section title", "items": ["concise, specific point", "concise, specific point"] }
+  ]
 }
 
-Rules: infer all details from experience. Make bullets punchy and quantified. Use strong action verbs.`;
+Rules:
+- Infer all details from experience. Make bullets punchy and quantified. Use strong action verbs.
+- "extraSections": add 1–2 sections that are specifically valuable on a ${prof.label} resume${prof.sections.length ? ` — suggested headings: ${prof.sections.join(", ")}` : ""}. Each "items" entry is one short line (a license/registration no., a publication, a notable case, a portfolio link, an award, etc.). Only include sections you can populate from the experience; if none add value, return "extraSections": [].
+- For ${prof.label}, also fill "portfolio" with a relevant link (portfolio/GitHub/profile) when appropriate, else "".`;
 
   let text;
   try {

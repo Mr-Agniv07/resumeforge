@@ -295,7 +295,7 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
   <div class="form-grid">
     <div class="form-group full">
       <label>Profession / Field *</label>
-      <select id="f-field">
+      <select id="f-field" onchange="applyFieldHints()">
         <option value="engineering">⚙️ Engineering / Technology</option>
         <option value="medical">🩺 Medical / Healthcare</option>
         <option value="legal">⚖️ Legal / Law</option>
@@ -467,6 +467,26 @@ const FIELDS = {
   general:     "Technical",
 };
 
+// Profession-aware example text so users know what to write for their field.
+const PLACEHOLDERS = {
+  engineering: { role: "Senior Backend Engineer", exp: "E.g: 4 years at TCS as a Java developer. Built microservices for a banking app with 2M users. Led a team of 5. B.Tech CSE, JNTU Hyderabad 2019. Skills: AWS, Docker, Spring Boot. AWS Solutions Architect certified." },
+  medical:     { role: "Consultant Physician",    exp: "E.g: MBBS (Osmania, 2015) + MD General Medicine (2019). 5 years at Apollo Hospital, Hyderabad. Telangana Medical Council reg. no. 12345. Ran ICU, performed 200+ procedures, published 3 papers on diabetes care." },
+  legal:       { role: "Associate Advocate",      exp: "E.g: LLB (NLU Delhi, 2017). Enrolled with Bar Council of India, 2018. 4 years at XYZ & Associates in corporate litigation and IP. Drafted 50+ contracts, argued before the High Court. Focus: arbitration." },
+  teaching:    { role: "PGT Mathematics",         exp: "E.g: M.Sc Maths + B.Ed. CTET qualified 2018. 6 years teaching grades 9–12 at DPS Hyderabad. Lifted board results by 22%. Designed STEM curriculum, mentored 200+ students." },
+  finance:     { role: "Senior Financial Analyst",exp: "E.g: CA (2018) + B.Com. 5 years at Deloitte in audit and financial reporting. Saved ₹2Cr via tax optimisation. Expert in SAP, advanced Excel, Indian GAAP and IFRS." },
+  business:    { role: "Operations Manager",      exp: "E.g: MBA (IIM-B, 2016). 7 years at Amazon leading operations. Owned a ₹50Cr P&L and a team of 40. Improved fulfilment efficiency 30%. Strategy, stakeholder management, Six Sigma." },
+  design:      { role: "Senior Product Designer", exp: "E.g: B.Des (2017). 5 years at Razorpay designing fintech UX. Led a redesign that lifted conversion 18%. Tools: Figma, Adobe CC, prototyping. Portfolio: behance.net/yourname." },
+  sales:       { role: "Regional Sales Manager",  exp: "E.g: MBA Marketing. 6 years at HUL. Beat quota 120% for three years running. Grew regional revenue from ₹5Cr to ₹14Cr. Managed 12 key accounts on Salesforce CRM." },
+  general:     { role: "Target Role",             exp: "Paste anything about your background: years of experience, companies, key achievements, education, skills, and certifications." },
+};
+
+function applyFieldHints() {
+  const f = document.getElementById('f-field').value;
+  const p = PLACEHOLDERS[f] || PLACEHOLDERS.general;
+  document.getElementById('f-role').placeholder = p.role;
+  document.getElementById('f-exp').placeholder  = p.exp;
+}
+
 let R           = null;
 let activeTab   = "cv";
 let currentUser = null;
@@ -474,6 +494,8 @@ let currentField = "engineering";
 
 // ── INIT ───────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
+  applyFieldHints();   // profession-aware placeholders for the default field
+
   // Initialize Google Sign-In buttons
   if (window.google) initGoogle();
   else document.querySelector('script[src*="gsi"]').addEventListener('load', initGoogle);
@@ -828,10 +850,11 @@ function getInitials(name) {
 
 function renderCV(r) {
   const contacts = [
-    r.email    && `<span class="cv-contact-item">${ICONS.mail}${r.email}</span>`,
-    r.phone    && `<span class="cv-contact-item">${ICONS.phone}${r.phone}</span>`,
-    r.location && `<span class="cv-contact-item">${ICONS.loc}${r.location}</span>`,
-    r.linkedin && `<span class="cv-contact-item">${ICONS.link}${r.linkedin}</span>`,
+    r.email     && `<span class="cv-contact-item">${ICONS.mail}${r.email}</span>`,
+    r.phone     && `<span class="cv-contact-item">${ICONS.phone}${r.phone}</span>`,
+    r.location  && `<span class="cv-contact-item">${ICONS.loc}${r.location}</span>`,
+    r.linkedin  && `<span class="cv-contact-item">${ICONS.link}${r.linkedin}</span>`,
+    r.portfolio && `<span class="cv-contact-item">${ICONS.link}${r.portfolio}</span>`,
   ].filter(Boolean).join('');
 
   document.getElementById('cv-head').innerHTML = `
@@ -863,6 +886,15 @@ function renderCV(r) {
         </div>`).join('')}
     </div>` : '';
 
+  // Field-specific sections (licenses, publications, bar admissions, portfolio, etc.)
+  const extraHTML = (r.extraSections||[])
+    .filter(s => s && s.heading && (s.items||[]).length)
+    .map(s => `
+      <div style="margin-top:24px">
+        <div class="cv-sec-head">${s.heading}</div>
+        <ul class="cv-bullets">${(s.items||[]).map(i=>`<li>${i}</li>`).join('')}</ul>
+      </div>`).join('');
+
   document.getElementById('cv-main').innerHTML = `
     <div style="margin-bottom:24px">
       <div class="cv-sec-head">Professional Summary</div>
@@ -871,7 +903,7 @@ function renderCV(r) {
     <div>
       <div class="cv-sec-head">Experience</div>
       ${expHTML}
-    </div>${projHTML}`;
+    </div>${projHTML}${extraHTML}`;
 
   const eduHTML = (r.education||[]).map(e=>`
     <div class="cv-edu-item">
@@ -997,8 +1029,12 @@ ${styleHTML}
 
 function copyText() {
   if (!R) return;
+  const extraText = (R.extraSections||[])
+    .filter(s => s && s.heading && (s.items||[]).length)
+    .map(s => `\n\n${(s.heading||'').toUpperCase()}\n${(s.items||[]).map(i=>`  • ${i}`).join('\n')}`)
+    .join('');
   let t = activeTab === 'cv'
-    ? `${R.name||''}\n${R.title||''}\n${[R.email,R.phone,R.location].filter(Boolean).join(' | ')}\n\nPROFESSIONAL SUMMARY\n${R.summary||''}\n\nEXPERIENCE\n${(R.experience||[]).map(e=>`${e.role} — ${e.company} (${e.duration})\n${(e.bullets||[]).map(b=>`  • ${b}`).join('\n')}`).join('\n\n')}\n\nSKILLS\n${(R.skills?.technical||[]).join(', ')}\n\nEDUCATION\n${(R.education||[]).map(e=>`${e.degree} — ${e.institution} (${e.year})`).join('\n')}`
+    ? `${R.name||''}\n${R.title||''}\n${[R.email,R.phone,R.location].filter(Boolean).join(' | ')}\n\nPROFESSIONAL SUMMARY\n${R.summary||''}\n\nEXPERIENCE\n${(R.experience||[]).map(e=>`${e.role} — ${e.company} (${e.duration})\n${(e.bullets||[]).map(b=>`  • ${b}`).join('\n')}`).join('\n\n')}\n\nSKILLS\n${(R.skills?.technical||[]).join(', ')}\n\nEDUCATION\n${(R.education||[]).map(e=>`${e.degree} — ${e.institution} (${e.year})`).join('\n')}${extraText}`
     : (R.coverLetter||'');
   navigator.clipboard.writeText(t).then(() => {
     const b = event.target; b.textContent = '✓ Copied!';
