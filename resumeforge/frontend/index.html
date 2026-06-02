@@ -570,8 +570,42 @@ function copyText(){
 
 // ── PAYMENT PLACEHOLDER ──────────────────────────
 function pay(plan){
-  alert(`Connect Razorpay here for ₹${plan==='pro'?'499':'199'} payment.\nSee razorpay.com to get your key.`);
+  const amount = plan === 'pro' ? '499' : '199';
+  const desc   = plan === 'pro' ? 'ResumeForge Pro Monthly' : 'ResumeForge Single CV';
+  const upiId  = '9088037677@ibl'; // ← replace with your actual UPI ID
+
+  document.getElementById('pay-amount').textContent = '₹' + amount;
+  document.getElementById('pay-desc').textContent   = desc;
+  document.getElementById('pay-upi').textContent    = upiId;
+  document.getElementById('pay-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=${upiId}%26pn=ResumeForge%26am=${amount}%26cu=INR%26tn=${encodeURIComponent(desc)}`;
+  document.getElementById('pay-modal').style.display = 'flex';
 }
 </script>
+<!-- PAYMENT MODAL -->
+<div id="pay-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:white;border-radius:16px;padding:36px;max-width:380px;width:100%;text-align:center;position:relative">
+    
+    <button onclick="document.getElementById('pay-modal').style.display='none'" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#888">✕</button>
+    
+    <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:4px">Complete Payment</div>
+    <div id="pay-desc" style="font-size:13px;color:#888;margin-bottom:6px"></div>
+    <div id="pay-amount" style="font-family:'Playfair Display',serif;font-size:40px;font-weight:700;color:#c9a84c;margin-bottom:20px"></div>
+
+    <img id="pay-qr" src="" alt="UPI QR Code" style="width:180px;height:180px;border:1px solid #e5e0d5;border-radius:8px;margin-bottom:16px"/>
+    
+    <div style="font-size:13px;color:#555;margin-bottom:8px">Or pay using UPI ID</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;background:#f5f0e8;border:1px solid #e5e0d5;border-radius:8px;padding:10px 14px;margin-bottom:16px">
+      <span id="pay-upi" style="font-size:14px;font-weight:600;color:#0f0e0c"></span>
+      <button onclick="navigator.clipboard.writeText(document.getElementById('pay-upi').textContent).then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='Copy',2000)})" style="background:#c9a84c;color:#0f0e0c;border:none;padding:4px 10px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer">Copy</button>
+    </div>
+
+    <div style="font-size:12px;color:#888;line-height:1.6;margin-bottom:20px">
+      1. Scan QR or copy UPI ID<br/>
+      2. Pay the amount shown<br/>
+    </div>
+
+    <button onclick="document.getElementById('pay-modal').style.display='none'" style="width:100%;background:#0f0e0c;color:white;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer">I've made the payment</button>
+  </div>
+</div>
 </body>
 </html>
