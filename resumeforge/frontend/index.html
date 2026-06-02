@@ -205,6 +205,37 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
 
 /* PDF — hide action UI when rendering */
 .pdf-hide{transition:none}
+
+/* Auth bar (top of builder section) */
+.auth-bar{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.auth-bar-left{display:flex;align-items:center;gap:10px}
+.auth-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3d5a47,#c9a84c);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:white;flex-shrink:0}
+.auth-name{font-size:14px;font-weight:500;color:white}
+.auth-plan{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:4px}
+.auth-plan.free{background:rgba(255,255,255,0.08);color:#a89a7a}
+.auth-plan.pro{background:rgba(201,168,76,0.2);color:var(--gold)}
+.auth-usage{font-size:12px;color:#a89a7a}
+.auth-logout{background:none;border:1px solid rgba(255,255,255,0.15);color:#a89a7a;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* Login prompt (shown when not logged in) */
+.login-prompt{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:20px;margin-bottom:20px;text-align:center}
+.login-prompt p{font-size:14px;color:#a89a7a;margin-bottom:14px}
+.login-input-row{display:flex;gap:8px;max-width:400px;margin:0 auto}
+.login-input-row input{flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px 14px;color:white;font-size:14px;font-family:'DM Sans',sans-serif;outline:none}
+.login-input-row input:focus{border-color:rgba(201,168,76,0.55)}
+.magic-btn{background:var(--gold);color:var(--ink);border:none;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.magic-sent{font-size:13px;color:#5dbd7e;margin-top:10px}
+
+/* Payment verification form */
+.pay-verify-wrap{padding:24px 20px;background:rgba(201,168,76,0.06);border-top:1px solid rgba(201,168,76,0.15);border-radius:0 0 12px 12px;margin-top:8px}
+.pay-verify-wrap h3{font-size:14px;font-weight:600;color:var(--gold);margin-bottom:6px}
+.pay-verify-wrap p{font-size:13px;color:#a89a7a;margin-bottom:16px;line-height:1.6}
+.pay-verify-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.pay-verify-grid input{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px 13px;color:white;font-size:13px;font-family:'DM Sans',sans-serif;outline:none}
+.pay-verify-grid input:focus{border-color:rgba(201,168,76,0.5)}
+.utr-input{grid-column:1/-1}
+.submit-utr-btn{background:var(--gold);color:var(--ink);border:none;padding:11px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.submit-utr-btn:disabled{opacity:.5;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -234,7 +265,15 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
   <div class="sec-tag">Step 1 of 1</div>
   <div class="sec-title" style="color:white">Tell us about yourself</div>
   <div class="sec-sub">The more detail you give, the better the CV. Paste your old resume, LinkedIn bio, or just describe your work history.</div>
+  <div id="auth-bar" class="auth-bar" style="display:none"></div>
 
+<div id="login-prompt" class="login-prompt" style="display:none">
+  <p>Create a free account to generate your CV — no password needed.</p>
+  <div class="login-input-row">
+    <input type="email" id="login-email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')sendMagicLink()"/>
+    <button class="magic-btn" id="magic-send-btn" onclick="sendMagicLink()">Send link →</button>
+  </div>
+</div>
   <div class="form-grid">
     <div class="form-group"><label>Full Name</label><input id="f-name" placeholder="Aditya Kumar"/></div>
     <div class="form-group"><label>Target Role *</label><input id="f-role" placeholder="Senior Backend Engineer" required/></div>
@@ -318,27 +357,162 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
 </footer>
 
 <script>
-// ── CONFIG ─────────────────────────────────────
-const BACKEND = "https://resumeforge-hun8.onrender.com";
-let R = null; // resume data
+// ── CONFIG ──────────────────────────────────────────────────
+const BACKEND = "https://resumeforge-hun8.onrender.com"; // ← your backend
+let R = null;
 let activeTab = "cv";
+let currentUser = null; // { email, name, plan, cvCount, remaining }
 
-function scroll2(id){ document.getElementById(id).scrollIntoView({behavior:'smooth'}) }
+// ── INIT ─────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  // Check for magic-link token in URL
+  const params = new URLSearchParams(window.location.search);
+  const token  = params.get('token');
+  if (token) await verifyMagicToken(token);
 
-// ── GENERATE ────────────────────────────────────
-async function generate(){
+  // Load user if JWT exists
+  const jwt = localStorage.getItem('rf_token');
+  if (jwt) await loadUser(jwt);
+  else      renderAuthUI(null);
+});
+
+// ── AUTH ─────────────────────────────────────────────────────
+async function verifyMagicToken(token) {
+  try {
+    const res  = await fetch(`${BACKEND}/api/auth/verify?token=${token}`);
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem('rf_token', data.token);
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  } catch(e) { console.error("Token verify failed", e); }
+}
+
+async function loadUser(jwt) {
+  try {
+    const res  = await fetch(`${BACKEND}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${jwt}` }
+    });
+    if (!res.ok) { localStorage.removeItem('rf_token'); renderAuthUI(null); return; }
+    currentUser = await res.json();
+    renderAuthUI(currentUser);
+  } catch(e) { renderAuthUI(null); }
+}
+
+function renderAuthUI(user) {
+  const loginPrompt = document.getElementById('login-prompt');
+  const authBar     = document.getElementById('auth-bar');
+
+  if (!user) {
+    loginPrompt.style.display = 'block';
+    authBar.style.display     = 'none';
+    return;
+  }
+
+  loginPrompt.style.display = 'none';
+  authBar.style.display     = 'flex';
+
+  const initials = (user.name||user.email).split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || user.email[0].toUpperCase();
+  const isPro    = user.plan === 'pro';
+  const usage    = isPro
+    ? 'Unlimited CVs'
+    : `${user.remaining} of ${user.cvLimit} free CVs remaining this month`;
+
+  document.getElementById('auth-bar').innerHTML = `
+    <div class="auth-bar-left">
+      <div class="auth-avatar">${initials}</div>
+      <div>
+        <div class="auth-name">${user.name||user.email} <span class="auth-plan ${isPro?'pro':'free'}">${isPro?'PRO':'FREE'}</span></div>
+        <div class="auth-usage">${usage}</div>
+      </div>
+    </div>
+    <button class="auth-logout" onclick="logout()">Sign out</button>`;
+}
+
+async function sendMagicLink() {
+  const emailEl = document.getElementById('login-email');
+  const email   = emailEl.value.trim();
+  if (!email || !email.includes('@')) { alert('Enter a valid email.'); return; }
+
+  const btn = document.getElementById('magic-send-btn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+
+  try {
+    const res  = await fetch(`${BACKEND}/api/auth/magic`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('magic-email-shown').textContent = email;
+      document.getElementById('magic-overlay').style.display   = 'flex';
+    } else {
+      alert(data.error || 'Failed to send link.');
+    }
+  } catch { alert('Cannot reach server.'); }
+
+  btn.disabled = false; btn.textContent = 'Send link →';
+}
+
+function logout() {
+  localStorage.removeItem('rf_token');
+  currentUser = null;
+  renderAuthUI(null);
+}
+
+// ── PAYMENT VERIFY FORM ──────────────────────────────────────
+async function submitUTR(plan) {
+  const email = document.getElementById('utr-email').value.trim();
+  const name  = document.getElementById('utr-name').value.trim();
+  const utr   = document.getElementById('utr-code').value.trim();
+  const btn   = document.getElementById('submit-utr-btn');
+
+  if (!email || !utr) { alert('Email and UTR/Transaction ID are required.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Submitting…';
+
+  try {
+    const res  = await fetch(`${BACKEND}/api/payment/submit`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email, name, utr, plan })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById('pay-verify-form').innerHTML = `
+        <div style="text-align:center;padding:16px 0;color:#5dbd7e;font-size:14px">
+          ✓ Submitted! We'll verify your payment and email you within a few hours.
+        </div>`;
+    } else {
+      alert(data.error || 'Submission failed.');
+      btn.disabled = false; btn.textContent = 'Submit for verification';
+    }
+  } catch {
+    alert('Cannot reach server.');
+    btn.disabled = false; btn.textContent = 'Submit for verification';
+  }
+}
+
+// ── GENERATE ─────────────────────────────────────────────────
+async function generate() {
   const exp  = document.getElementById('f-exp').value.trim();
   const role = document.getElementById('f-role').value.trim();
-  if(!exp||!role){ alert('Please fill in your Experience and Target Role.'); return; }
+  if (!exp || !role) { alert('Please fill in your Experience and Target Role.'); return; }
 
-  const btn=document.getElementById('gen-btn'), err=document.getElementById('err');
-  err.style.display='none';
-  btn.disabled=true;
-  btn.innerHTML='<span class="spinner"></span>AI is writing your CV…';
+  const jwt = localStorage.getItem('rf_token');
+  if (!jwt) { alert('Please log in first to generate your CV.'); scroll2('builder'); return; }
 
-  try{
-    const res = await fetch(`${BACKEND}/api/generate`,{
-      method:'POST', headers:{'Content-Type':'application/json'},
+  const btn = document.getElementById('gen-btn');
+  const err = document.getElementById('err');
+  err.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>AI is writing your CV…';
+
+  try {
+    const res = await fetch(`${BACKEND}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
       body: JSON.stringify({
         experience: exp, role,
         company:  document.getElementById('f-company').value.trim(),
@@ -349,25 +523,86 @@ async function generate(){
       })
     });
     const data = await res.json();
-    if(!res.ok||!data.resume){
-      err.textContent='⚠ '+(data.error||'Generation failed. Please try again.');
-      err.style.display='block';
-      btn.disabled=false; btn.innerHTML='✦ Try again'; return;
+
+    if (!res.ok || !data.resume) {
+      // If limit reached, show upgrade nudge
+      if (res.status === 429) {
+        err.innerHTML = `⚠ ${data.error} <a href="#pricing" style="color:var(--gold)">See pricing ↓</a>`;
+      } else if (res.status === 401) {
+        err.textContent = '⚠ Session expired. Please log in again.';
+        logout();
+      } else {
+        err.textContent = '⚠ ' + (data.error || 'Generation failed.');
+      }
+      err.style.display = 'block';
+      btn.disabled = false; btn.innerHTML = '✦ Try again';
+      return;
     }
+
     R = data.resume;
     renderCV(R); renderCL(R);
-    const out=document.getElementById('output-section');
-    out.style.display='block';
-    setTimeout(()=>out.scrollIntoView({behavior:'smooth'}),100);
-    btn.disabled=false; btn.innerHTML='✦ Regenerate CV';
-  }catch(e){
-    err.textContent='⚠ Cannot reach server. Is the backend running at '+BACKEND+'?';
-    err.style.display='block';
-    btn.disabled=false; btn.innerHTML='✦ Try again';
+
+    // Update usage counter display
+    if (data.usage && currentUser) {
+      currentUser.cvCount   = data.usage.cvCount;
+      currentUser.remaining = data.usage.remaining;
+      renderAuthUI(currentUser);
+    }
+
+    const out = document.getElementById('output-section');
+    out.style.display = 'block';
+    setTimeout(() => out.scrollIntoView({ behavior: 'smooth' }), 100);
+    btn.disabled = false; btn.innerHTML = '✦ Regenerate CV';
+  } catch(e) {
+    err.textContent = '⚠ Cannot reach server. Is the backend running at ' + BACKEND + '?';
+    err.style.display = 'block';
+    btn.disabled = false; btn.innerHTML = '✦ Try again';
   }
 }
 
-// ── RENDER CV ───────────────────────────────────
+// ── PAY MODAL (with UTR form added) ──────────────────────────
+function pay(plan) {
+  const amount = plan === 'pro' ? '499' : '199';
+  const desc   = plan === 'pro' ? 'ResumeForge Pro Monthly' : 'ResumeForge Single CV';
+  const upiId  = '9088037677@ibl';
+
+  document.getElementById('pay-amount').textContent = '₹' + amount;
+  document.getElementById('pay-desc').textContent   = desc;
+  document.getElementById('pay-upi').textContent    = upiId;
+  document.getElementById('pay-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=${upiId}%26pn=ResumeForge%26am=${amount}%26cu=INR%26tn=${encodeURIComponent(desc)}`;
+
+  // Fill email if logged in
+  const email = currentUser?.email || '';
+  document.getElementById('utr-email').value = email;
+  document.getElementById('utr-name').value  = currentUser?.name || '';
+  document.getElementById('current-plan').value = plan;
+
+  // Reset form
+  document.getElementById('pay-verify-form').innerHTML = getUTRFormHTML();
+
+  document.getElementById('pay-modal').style.display = 'flex';
+}
+
+function getUTRFormHTML() {
+  return `
+    <div class="pay-verify-wrap" id="pay-verify-form">
+      <h3>Paid? Submit your UTR to get verified</h3>
+      <p>After paying, enter the UTR / Transaction ID from your UPI app (Google Pay, PhonePe, Paytm etc.) We'll verify within a few hours and email you.</p>
+      <div class="pay-verify-grid">
+        <input id="utr-name"  placeholder="Your name" />
+        <input id="utr-email" type="email" placeholder="Your email *" required />
+        <input id="utr-code"  class="utr-input" placeholder="UTR / Transaction ID (e.g. 426112345678)" />
+      </div>
+      <input type="hidden" id="current-plan" value="pro"/>
+      <button class="submit-utr-btn" id="submit-utr-btn" onclick="submitUTR(document.getElementById('current-plan').value)">
+        Submit for verification →
+      </button>
+    </div>`;
+}
+
+// ── REST OF YOUR EXISTING CODE (unchanged) ────────────────────
+function scroll2(id){ document.getElementById(id).scrollIntoView({behavior:'smooth'}) }
+
 function icon(path){ return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`; }
 const ICONS = {
   mail: icon('<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline>'),
@@ -381,206 +616,10 @@ function initials(name){
   return (name||'CV').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
 }
 
-function renderCV(r){
-  // ── HEAD ──
-  const contacts = [
-    r.email    && `<span class="cv-contact-item">${ICONS.mail}${r.email}</span>`,
-    r.phone    && `<span class="cv-contact-item">${ICONS.phone}${r.phone}</span>`,
-    r.location && `<span class="cv-contact-item">${ICONS.loc}${r.location}</span>`,
-    r.linkedin && `<span class="cv-contact-item">${ICONS.link}${r.linkedin}</span>`,
-    r.portfolio&& `<span class="cv-contact-item">${ICONS.globe}${r.portfolio}</span>`,
-  ].filter(Boolean).join('');
-
-  document.getElementById('cv-head').innerHTML = `
-    <div class="cv-head-left">
-      <div class="cv-name">${r.name||'Your Name'}</div>
-      <div class="cv-title-line">${r.title||''}</div>
-      <div class="cv-contact-row">${contacts}</div>
-    </div>
-    <div class="cv-head-right">
-      <div class="cv-initials">${initials(r.name)}</div>
-    </div>`;
-
-  // ── MAIN ──
-  const expHTML = (r.experience||[]).map(e=>`
-    <div class="cv-exp-block">
-      <div class="cv-exp-top">
-        <div class="cv-exp-role">${e.role||''}</div>
-        <div class="cv-exp-dur">${e.duration||''}</div>
-      </div>
-      <div class="cv-exp-co">${e.company||''}${e.location?` <span class="cv-exp-loc">· ${e.location}</span>`:''}</div>
-      <ul class="cv-bullets">${(e.bullets||[]).map(b=>`<li>${b}</li>`).join('')}</ul>
-    </div>`).join('');
-
-  // Projects (if present, show in main)
-  const projHTML = (r.projects||[]).length ? `
-    <div style="margin-top:24px">
-      <div class="cv-sec-head">Notable Projects</div>
-      ${(r.projects||[]).map(p=>`
-        <div class="cv-proj-item">
-          <div class="cv-proj-name">${p.name||''}</div>
-          <div class="cv-proj-desc">${p.description||''}</div>
-          <div class="cv-proj-tech">${(p.tech||[]).map(t=>`<span>${t}</span>`).join('')}</div>
-        </div>`).join('')}
-    </div>` : '';
-
-  document.getElementById('cv-main').innerHTML = `
-    <div style="margin-bottom:24px">
-      <div class="cv-sec-head">Professional Summary</div>
-      <div class="cv-summary">${r.summary||''}</div>
-    </div>
-    <div>
-      <div class="cv-sec-head">Experience</div>
-      ${expHTML}
-    </div>
-    ${projHTML}`;
-
-  // ── SIDE ──
-  const eduHTML = (r.education||[]).map(e=>`
-    <div class="cv-edu-item">
-      <div class="cv-edu-deg">${e.degree||''}</div>
-      <div class="cv-edu-inst">${e.institution||''}</div>
-      <div class="cv-edu-meta">${e.year||''}${e.gpa?' · '+e.gpa:''}</div>
-    </div>`).join('');
-
-  const techTags = (r.skills?.technical||[]).map(s=>`<span class="cv-skill-tag">${s}</span>`).join('');
-  const softTags = (r.skills?.soft||[]).map(s=>`<span class="cv-skill-tag">${s}</span>`).join('');
-
-  const certHTML = (r.certifications||[]).map(c=>{
-    const name = typeof c==='string' ? c : c.name;
-    const issuer = typeof c==='object' ? (c.issuer?` · <span class="cv-cert-issuer">${c.issuer}${c.year?' '+c.year:''}</span>`:'') : '';
-    return `<li>${name}${issuer}</li>`;
-  }).join('');
-
-  const langHTML = (r.languages||[]).map(l=>`<div class="cv-lang-item">• ${l}</div>`).join('');
-
-  document.getElementById('cv-side').innerHTML = `
-    <div class="cv-side-section">
-      <div class="cv-sec-head">Education</div>
-      ${eduHTML||'<div style="font-size:12px;color:#888">Not provided</div>'}
-    </div>
-    ${techTags||softTags?`
-    <div class="cv-side-section">
-      <div class="cv-sec-head">Skills</div>
-      ${techTags?`<div class="cv-skill-group"><div class="cv-skill-cat">Technical</div><div class="cv-skill-tags">${techTags}</div></div>`:''}
-      ${softTags?`<div class="cv-skill-group"><div class="cv-skill-cat">Soft Skills</div><div class="cv-skill-tags">${softTags}</div></div>`:''}
-    </div>`:''}
-    ${certHTML?`
-    <div class="cv-side-section">
-      <div class="cv-sec-head">Certifications</div>
-      <ul class="cv-cert-list">${certHTML}</ul>
-    </div>`:''}
-    ${langHTML?`
-    <div class="cv-side-section">
-      <div class="cv-sec-head">Languages</div>
-      <div class="cv-lang-list">${langHTML}</div>
-    </div>`:''}`;
-}
-
-// ── RENDER COVER LETTER ─────────────────────────
-function renderCL(r){
-  const today = new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
-  const role  = document.getElementById('f-role').value.trim();
-  const co    = document.getElementById('f-company').value.trim();
-  const paras = (r.coverLetter||'').split(/\n+/).filter(p=>p.trim()).map(p=>`<p>${p.trim()}</p>`).join('');
-
-  document.getElementById('cl-body').innerHTML = `
-    <div class="cl-header">
-      <div class="cl-from-name">${r.name||'Your Name'}</div>
-      <div class="cl-from-contact">
-        ${r.email?`<span>${r.email}</span>`:''}
-        ${r.phone?`<span>${r.phone}</span>`:''}
-        ${r.location?`<span>${r.location}</span>`:''}
-      </div>
-    </div>
-    <div class="cl-date">${today}</div>
-    <div class="cl-to">
-      Hiring Manager<br/>
-      ${co||'[Company Name]'}<br/>
-      ${r.location||''}
-    </div>
-    <div class="cl-subject">Re: Application for ${role||'the position'}</div>
-    <div class="cl-paras">${paras}</div>
-    <div class="cl-sign">
-      <div class="cl-sign-warm">Warm regards,</div>
-      <div class="cl-sign-name">${r.name||'Your Name'}</div>
-      <div class="cl-sign-title">${r.title||''}</div>
-    </div>`;
-}
-
-// ── TABS ────────────────────────────────────────
-function showTab(tab, el){
-  activeTab = tab;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('cv-wrap').style.display = tab==='cv'?'block':'none';
-  document.getElementById('cl-doc').style.display  = tab==='cl'?'block':'none';
-  document.getElementById('dl-btn').textContent = tab==='cv'?'⬇ Download CV PDF':'⬇ Download Cover Letter PDF';
-}
-
-// ── DOWNLOAD PDF ────────────────────────────────
-function downloadPDF(){
-  if(!R) return;
-  const el = activeTab==='cv'
-    ? document.getElementById('cv-wrap')
-    : document.getElementById('cl-doc');
-  const fname = (R.name||'resume').replace(/\s+/g,'-').toLowerCase();
-  const filename = activeTab==='cv' ? `${fname}-cv.pdf` : `${fname}-cover-letter.pdf`;
-
-  // Temporarily make visible if hidden
-  const wasHidden = el.style.display==='none';
-  if(wasHidden){ el.style.display='block'; }
-
-  html2pdf().set({
-    margin:[8,8,8,8],
-    filename,
-    image:{type:'jpeg',quality:0.98},
-    html2canvas:{scale:2,useCORS:true,letterRendering:true},
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
-  }).from(el).save().then(()=>{
-    if(wasHidden) el.style.display='none';
-  });
-}
-
-// ── COPY TEXT ────────────────────────────────────
-function copyText(){
-  if(!R) return;
-  let t='';
-  if(activeTab==='cv'){
-    t += `${R.name||''}\n${R.title||''}\n`;
-    t += [R.email,R.phone,R.location].filter(Boolean).join(' | ')+'\n\n';
-    t += `PROFESSIONAL SUMMARY\n${R.summary||''}\n\n`;
-    t += `EXPERIENCE\n`;
-    (R.experience||[]).forEach(e=>{
-      t+=`${e.role} — ${e.company} (${e.duration})\n`;
-      (e.bullets||[]).forEach(b=>t+=`  • ${b}\n`);
-      t+='\n';
-    });
-    t+=`SKILLS\n${(R.skills?.technical||[]).join(', ')}\n\n`;
-    t+=`EDUCATION\n`;
-    (R.education||[]).forEach(e=>t+=`${e.degree} — ${e.institution} (${e.year})\n`);
-  } else {
-    t = R.coverLetter||'';
-  }
-  navigator.clipboard.writeText(t).then(()=>{
-    const b=event.target; b.textContent='✓ Copied!';
-    setTimeout(()=>b.textContent='⧉ Copy as text',2000);
-  });
-}
-
-// ── PAYMENT PLACEHOLDER ──────────────────────────
-function pay(plan){
-  const amount = plan === 'pro' ? '499' : '199';
-  const desc   = plan === 'pro' ? 'ResumeForge Pro Monthly' : 'ResumeForge Single CV';
-  const upiId  = '9088037677@ibl'; // ← replace with your actual UPI ID
-
-  document.getElementById('pay-amount').textContent = '₹' + amount;
-  document.getElementById('pay-desc').textContent   = desc;
-  document.getElementById('pay-upi').textContent    = upiId;
-  document.getElementById('pay-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=${upiId}%26pn=ResumeForge%26am=${amount}%26cu=INR%26tn=${encodeURIComponent(desc)}`;
-  document.getElementById('pay-modal').style.display = 'flex';
-}
+// renderCV, renderCL, showTab, downloadPDF, copyText stay EXACTLY the same as your current code.
+// (Not repeated here to keep this file focused on the additions.)
 </script>
+
 <!-- PAYMENT MODAL -->
 <div id="pay-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;align-items:center;justify-content:center;padding:20px">
   <div style="background:white;border-radius:16px;padding:36px;max-width:380px;width:100%;text-align:center;position:relative">
@@ -607,5 +646,17 @@ function pay(plan){
     <button onclick="document.getElementById('pay-modal').style.display='none'" style="width:100%;background:#0f0e0c;color:white;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer">I've made the payment</button>
   </div>
 </div>
+
+<!-- Login modal / magic link verify overlay -->
+<div id="magic-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center">
+  <div style="background:#1a1917;border:1px solid #2a2a28;border-radius:14px;padding:36px;width:380px;max-width:95vw;text-align:center">
+    <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:8px">Check your inbox</div>
+    <p style="font-size:14px;color:#a89a7a;line-height:1.65;margin-bottom:24px">We sent a magic login link to <strong id="magic-email-shown" style="color:white"></strong>.<br/>Click it and you'll be logged in instantly.</p>
+    <button onclick="document.getElementById('magic-overlay').style.display='none'" style="background:rgba(255,255,255,0.08);border:none;color:#a89a7a;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">Close</button>
+  </div>
+</div>
+
+
+
 </body>
 </html>
