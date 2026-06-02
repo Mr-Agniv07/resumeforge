@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ResumeForge Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0a;--surface:#111;--border:#1e1e1e;--border2:#2a2a2a;
+  --gold:#c9a84c;--sage:#3d7a52;--red:#c0392b;--muted:#555;
+  --text:#e8e8e8;--text2:#999;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.login-box{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:40px;width:340px}
+.login-box h1{font-family:var(--mono);font-size:18px;color:var(--gold);margin-bottom:6px}
+.login-box p{font-size:13px;color:var(--text2);margin-bottom:24px}
+.login-box input{width:100%;background:#0a0a0a;border:1px solid var(--border2);border-radius:7px;padding:11px 14px;color:var(--text);font-size:14px;font-family:var(--mono);outline:none;margin-bottom:12px}
+.login-box input:focus{border-color:var(--gold)}
+.login-box button{width:100%;background:var(--gold);color:#0a0a0a;border:none;padding:12px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+
+/* SHELL */
+#app{display:none;min-height:100vh}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--mono);font-size:15px;color:var(--gold)}
+.logo span{color:var(--text2);font-size:12px;margin-left:8px}
+.logout-btn{background:none;border:1px solid var(--border2);color:var(--text2);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--sans)}
+.logout-btn:hover{border-color:var(--muted);color:var(--text)}
+
+/* NAV TABS */
+.tabs{display:flex;gap:2px;padding:0 28px;background:var(--surface);border-bottom:1px solid var(--border)}
+.tab{padding:14px 18px;font-size:13px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;background:none;border-left:none;border-right:none;border-top:none;font-family:var(--sans)}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.badge{display:inline-block;background:var(--gold);color:#0a0a0a;font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;margin-left:6px;font-family:var(--mono)}
+
+/* MAIN */
+main{padding:28px;max-width:1200px}
+
+/* STATS ROW */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:28px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.stat-val{font-family:var(--mono);font-size:28px;font-weight:600;color:var(--gold);line-height:1}
+.stat-label{font-size:11px;color:var(--text2);margin-top:6px;letter-spacing:1px;text-transform:uppercase}
+
+/* TABLE */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.table-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.table-head h2{font-size:13px;font-weight:600;font-family:var(--mono);color:var(--text)}
+.filter-row{display:flex;gap:8px}
+.filter-btn{background:none;border:1px solid var(--border2);color:var(--text2);padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--sans);transition:all .15s}
+.filter-btn.active{background:var(--gold);color:#0a0a0a;border-color:var(--gold);font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);padding:10px 16px;text-align:left;border-bottom:1px solid var(--border);font-family:var(--mono)}
+td{padding:13px 16px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
+.mono{font-family:var(--mono);font-size:12px}
+.plan-badge{display:inline-block;padding:2px 9px;border-radius:4px;font-size:10px;font-weight:600;font-family:var(--mono);letter-spacing:0.5px}
+.plan-free{background:#1a1a1a;color:var(--text2);border:1px solid var(--border2)}
+.plan-pro{background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3)}
+.status-badge{display:inline-block;padding:2px 9px;border-radius:4px;font-size:10px;font-weight:600;font-family:var(--mono)}
+.status-pending{background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.25)}
+.status-approved{background:rgba(61,122,82,0.15);color:#5dbd7e;border:1px solid rgba(61,122,82,0.3)}
+.status-rejected{background:rgba(192,57,43,0.12);color:#e07060;border:1px solid rgba(192,57,43,0.25)}
+.action-cell{display:flex;gap:6px;align-items:center}
+.approve-btn{background:var(--sage);color:white;border:none;padding:5px 12px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:opacity .15s}
+.approve-btn:hover{opacity:.8}
+.reject-btn{background:none;border:1px solid rgba(192,57,43,0.4);color:#e07060;padding:5px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:var(--sans);transition:all .15s}
+.reject-btn:hover{background:rgba(192,57,43,0.15)}
+.view-btn{background:none;border:1px solid var(--border2);color:var(--text2);padding:5px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:var(--sans)}
+
+/* EMPTY */
+.empty{padding:48px;text-align:center;color:var(--text2);font-size:13px}
+.empty svg{opacity:.2;margin-bottom:12px}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;padding:12px 18px;font-size:13px;z-index:999;transform:translateY(80px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:rgba(61,122,82,0.5);color:#5dbd7e}
+.toast.err{border-color:rgba(192,57,43,0.4);color:#e07060}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:28px;width:420px;max-width:95vw}
+.modal h3{font-family:var(--mono);font-size:15px;color:var(--gold);margin-bottom:16px}
+.modal label{font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px}
+.modal textarea{width:100%;background:#0a0a0a;border:1px solid var(--border2);border-radius:7px;padding:10px 13px;color:var(--text);font-size:13px;font-family:var(--sans);outline:none;resize:vertical;min-height:80px;margin-bottom:16px}
+.modal-row{display:flex;gap:8px;justify-content:flex-end}
+.modal-cancel{background:none;border:1px solid var(--border2);color:var(--text2);padding:8px 16px;border-radius:7px;font-size:13px;cursor:pointer;font-family:var(--sans)}
+.modal-confirm{padding:8px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:var(--sans)}
+.modal-confirm.approve{background:var(--sage);color:white}
+.modal-confirm.reject{background:var(--red);color:white}
+
+/* section hide */
+.section{display:none}
+.section.active{display:block}
+
+@media(max-width:700px){
+  th:nth-child(3),td:nth-child(3){display:none}
+  main{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>RF / Admin</h1>
+    <p>Enter admin key to continue</p>
+    <input type="password" id="key-input" placeholder="Admin key" onkeydown="if(event.key==='Enter')login()"/>
+    <button onclick="login()">Access Panel →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="logo">ResumeForge <span>/ Admin Panel</span></div>
+    <button class="logout-btn" onclick="logout()">Log out</button>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('payments',this)">Payments <span class="badge" id="pending-badge">0</span></button>
+    <button class="tab" onclick="switchTab('users',this)">Users</button>
+    <button class="tab" onclick="switchTab('stats',this)">Stats</button>
+  </div>
+
+  <main>
+    <!-- PAYMENTS TAB -->
+    <div class="section active" id="tab-payments">
+      <div class="stats" id="payment-stats"></div>
+      <div class="table-wrap">
+        <div class="table-head">
+          <h2>Payment Verifications</h2>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="loadPayments('pending',this)">Pending</button>
+            <button class="filter-btn" onclick="loadPayments('approved',this)">Approved</button>
+            <button class="filter-btn" onclick="loadPayments('rejected',this)">Rejected</button>
+          </div>
+        </div>
+        <div id="payments-table">
+          <div class="empty">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS TAB -->
+    <div class="section" id="tab-users">
+      <div class="table-wrap">
+        <div class="table-head">
+          <h2>All Users</h2>
+          <input id="user-search" placeholder="Search email…" style="background:#0a0a0a;border:1px solid #2a2a2a;border-radius:6px;padding:5px 12px;color:#e8e8e8;font-size:12px;outline:none;font-family:'IBM Plex Mono',monospace" oninput="filterUsers()"/>
+        </div>
+        <div id="users-table"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- STATS TAB -->
+    <div class="section" id="tab-stats">
+      <div class="stats" id="overview-stats"></div>
+    </div>
+  </main>
+</div>
+
+<!-- APPROVE/REJECT MODAL -->
+<div class="modal-bg" id="action-modal">
+  <div class="modal">
+    <h3 id="modal-title">Approve Payment</h3>
+    <label>Note (optional)</label>
+    <textarea id="modal-note" placeholder="e.g. Verified in HDFC app at 2:30pm"></textarea>
+    <div class="modal-row">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-confirm" id="modal-confirm-btn" onclick="confirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────
+const BACKEND = "https://resumeforge-hun8.onrender.com"; // ← your backend URL
+let ADMIN_KEY = "";
+let allUsers  = [];
+let pendingAction = null; // { id, type: 'approve'|'reject' }
+
+// ── LOGIN ─────────────────────────────────────────────────
+async function login(){
+  const key = document.getElementById('key-input').value.trim();
+  if(!key){ toast("Enter admin key","err"); return; }
+  
+  // Verify key against backend before granting access
+  const btn = document.querySelector('.login-box button');
+  btn.textContent = 'Verifying…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${BACKEND}/api/admin/payments?status=pending`, {
+      headers: { "x-admin-key": key }
+    });
+
+    if(res.status === 403){
+      toast("Invalid admin key","err");
+      btn.textContent = 'Access Panel →';
+      btn.disabled = false;
+      return;
+    }
+
+    // Key is valid
+    ADMIN_KEY = key;
+    const data = await res.json();
+    paymentCache['pending'] = data.payments;
+    document.getElementById('pending-badge').textContent = data.payments.length;
+    renderPaymentsTable(data.payments, 'pending');
+    renderPaymentStats();
+
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadUsers();
+
+  } catch(e) {
+    toast("Cannot reach server","err");
+    btn.textContent = 'Access Panel →';
+    btn.disabled = false;
+  }
+}
+
+function logout(){
+  ADMIN_KEY = "";
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// ── API HELPER ────────────────────────────────────────────
+async function api(path, method="GET", body=null){
+  const opts = {
+    method,
+    headers: { "Content-Type":"application/json", "x-admin-key": ADMIN_KEY }
+  };
+  if(body) opts.body = JSON.stringify(body);
+  const res = await fetch(BACKEND + path, opts);
+  if(res.status === 403){ toast("Invalid admin key","err"); logout(); return null; }
+  return res.json();
+}
+
+// ── TABS ──────────────────────────────────────────────────
+function switchTab(name, el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='stats') renderStats();
+}
+
+// ── PAYMENTS ──────────────────────────────────────────────
+let paymentCache = {};
+
+async function loadPayments(status, btnEl=null){
+  if(btnEl){
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btnEl.classList.add('active');
+  }
+  document.getElementById('payments-table').innerHTML = '<div class="empty">Loading…</div>';
+  const data = await api(`/api/admin/payments?status=${status}`);
+  if(!data) return;
+  paymentCache[status] = data.payments;
+
+  if(status==='pending'){
+    document.getElementById('pending-badge').textContent = data.payments.length;
+  }
+
+  renderPaymentsTable(data.payments, status);
+  renderPaymentStats();
+}
+
+function renderPaymentsTable(payments, status){
+  if(!payments.length){
+    document.getElementById('payments-table').innerHTML = `
+      <div class="empty">No ${status} payments</div>`;
+    return;
+  }
+  const rows = payments.map(p=>`
+    <tr>
+      <td><div style="font-weight:500">${p.name||'—'}</div><div class="mono" style="color:#666;margin-top:2px">${p.email}</div></td>
+      <td><span class="mono" style="color:#e8e8e8">${p.utr}</span></td>
+      <td><span class="mono">₹${p.amount}</span></td>
+      <td><span class="plan-badge ${p.plan==='pro'?'plan-pro':'plan-free'}">${p.plan}</span></td>
+      <td><span class="mono" style="color:#666">${fmtDate(p.submittedAt)}</span></td>
+      <td><span class="status-badge status-${p.status}">${p.status}</span></td>
+      <td>
+        <div class="action-cell">
+          ${p.status==='pending' ? `
+            <button class="approve-btn" onclick="openAction('${p._id}','approve')">✓ Approve</button>
+            <button class="reject-btn" onclick="openAction('${p._id}','reject')">✕</button>
+          ` : `<span style="font-size:11px;color:#555">${p.adminNote||'—'}</span>`}
+        </div>
+      </td>
+    </tr>`).join('');
+
+  document.getElementById('payments-table').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>User</th><th>UTR / Txn ID</th><th>Amount</th><th>Plan</th><th>Submitted</th><th>Status</th><th>Action</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function renderPaymentStats(){
+  const pending  = (paymentCache['pending']||[]).length;
+  const approved = (paymentCache['approved']||[]).length;
+  const rejected = (paymentCache['rejected']||[]).length;
+  const revenue  = (paymentCache['approved']||[]).reduce((sum,p)=>sum+p.amount,0);
+  document.getElementById('payment-stats').innerHTML = `
+    <div class="stat"><div class="stat-val">${pending}</div><div class="stat-label">Pending Review</div></div>
+    <div class="stat"><div class="stat-val">${approved}</div><div class="stat-label">Approved</div></div>
+    <div class="stat"><div class="stat-val">${rejected}</div><div class="stat-label">Rejected</div></div>
+    <div class="stat"><div class="stat-val">₹${revenue}</div><div class="stat-label">Total Revenue</div></div>`;
+}
+
+// ── ACTION MODAL ──────────────────────────────────────────
+function openAction(id, type){
+  pendingAction = { id, type };
+  document.getElementById('modal-title').textContent = type==='approve' ? 'Approve Payment' : 'Reject Payment';
+  const btn = document.getElementById('modal-confirm-btn');
+  btn.textContent = type==='approve' ? '✓ Approve & Upgrade User' : '✕ Reject';
+  btn.className = `modal-confirm ${type}`;
+  document.getElementById('modal-note').value = '';
+  document.getElementById('action-modal').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('action-modal').classList.remove('open');
+  pendingAction = null;
+}
+
+async function confirmAction(){
+  if(!pendingAction) return;
+  const { id, type } = pendingAction;
+  const note = document.getElementById('modal-note').value.trim();
+  closeModal();
+
+  const data = await api(`/api/admin/payments/${id}/${type}`, 'PATCH', { adminNote: note });
+  if(!data) return;
+  if(data.success){
+    toast(data.message, 'ok');
+    loadPayments('pending');
+    loadUsers();
+  } else {
+    toast(data.error||'Error', 'err');
+  }
+}
+
+// ── USERS ─────────────────────────────────────────────────
+async function loadUsers(){
+  const data = await api('/api/admin/users');
+  if(!data) return;
+  allUsers = data.users;
+  renderUsersTable(allUsers);
+  renderStats();
+}
+
+function filterUsers(){
+  const q = document.getElementById('user-search').value.toLowerCase();
+  renderUsersTable(allUsers.filter(u => u.email.includes(q) || (u.name||'').toLowerCase().includes(q)));
+}
+
+function renderUsersTable(users){
+  if(!users.length){
+    document.getElementById('users-table').innerHTML = '<div class="empty">No users found</div>';
+    return;
+  }
+  const rows = users.map(u=>`
+    <tr>
+      <td><div style="font-weight:500">${u.name||'—'}</div><div class="mono" style="color:#666;margin-top:2px">${u.email}</div></td>
+      <td><span class="plan-badge ${u.plan==='pro'?'plan-pro':'plan-free'}">${u.plan}</span></td>
+      <td><span class="mono">${u.cvCount}</span></td>
+      <td><span class="mono" style="color:#666">${u.proUntil ? fmtDate(u.proUntil) : '—'}</span></td>
+      <td><span class="mono" style="color:#666">${fmtDate(u.createdAt)}</span></td>
+      <td>
+        ${u.plan==='pro'
+          ? `<button class="reject-btn" onclick="downgrade('${u._id}','${u.email}')">Downgrade</button>`
+          : `<span style="font-size:11px;color:#444">Free</span>`}
+      </td>
+    </tr>`).join('');
+
+  document.getElementById('users-table').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>User</th><th>Plan</th><th>CVs Made</th><th>Pro Until</th><th>Joined</th><th>Action</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+async function downgrade(id, email){
+  if(!confirm(`Downgrade ${email} to free?`)) return;
+  const data = await api(`/api/admin/users/${id}/downgrade`, 'PATCH');
+  if(data?.success){ toast(`${email} downgraded`,'ok'); loadUsers(); }
+}
+
+// ── STATS ─────────────────────────────────────────────────
+function renderStats(){
+  const total   = allUsers.length;
+  const pros    = allUsers.filter(u=>u.plan==='pro').length;
+  const freeUs  = total - pros;
+  const totalCV = allUsers.reduce((s,u)=>s+u.cvCount,0);
+  document.getElementById('overview-stats').innerHTML = `
+    <div class="stat"><div class="stat-val">${total}</div><div class="stat-label">Total Users</div></div>
+    <div class="stat"><div class="stat-val">${pros}</div><div class="stat-label">Pro Users</div></div>
+    <div class="stat"><div class="stat-val">${freeUs}</div><div class="stat-label">Free Users</div></div>
+    <div class="stat"><div class="stat-val">${totalCV}</div><div class="stat-label">CVs Generated</div></div>`;
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+function fmtDate(d){
+  if(!d) return '—';
+  return new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function toast(msg, type='ok'){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  setTimeout(()=> t.classList.remove('show'), 3000);
+}
+
+// Close modal on background click
+document.getElementById('action-modal').addEventListener('click', e=>{
+  if(e.target === e.currentTarget) closeModal();
+});
+</script>
+</body>
+</html>
