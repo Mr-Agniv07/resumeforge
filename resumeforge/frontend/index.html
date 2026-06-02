@@ -641,20 +641,20 @@ function pay(plan) {
   }
 
   // Reset UTR form
-  document.getElementById('utr-form-wrap').innerHTML = getUTRFormHTML();
+  document.getElementById('utr-form-wrap').innerHTML = getUTRFormHTML(plan);
   document.getElementById('pay-modal').style.display = 'flex';
 }
 
-function getUTRFormHTML() {
+function getUTRFormHTML(plan) {
   return `
     <div class="utr-title">✅ Paid? Submit your UTR</div>
-    <div class="utr-sub">Enter the Transaction ID / UTR from your UPI app (Google Pay, PhonePe, Paytm). We'll verify and upgrade your account within a few hours.</div>
+    <div class="utr-sub">Enter the Transaction ID / UTR from your UPI app (Google Pay, PhonePe, Paytm). We'll verify and upgrade your account within a few minutes.</div>
     <div class="utr-grid">
       <input class="utr-input" id="utr-name" placeholder="Your name" value="${currentUser?.name||''}"/>
       <input class="utr-input" id="utr-email" type="email" placeholder="Email *" value="${currentUser?.email||''}"/>
       <input class="utr-input utr-full" id="utr-code" placeholder="UTR / Transaction ID *"/>
     </div>
-    <input type="hidden" id="utr-plan" value="pro"/>
+    <input type="hidden" id="utr-plan" value="${plan}"/>
     <button class="utr-submit-btn" id="utr-submit-btn" onclick="submitUTR()">Submit for verification →</button>`;
 }
 
@@ -679,7 +679,7 @@ async function submitUTR() {
       document.getElementById('utr-form-wrap').innerHTML = `
         <div class="utr-success">
           ✓ Submitted successfully!<br/>
-          <span style="color:#888;font-size:12px;font-weight:400">We'll verify your payment and upgrade your account within a few hours. Check your email.</span>
+          <span style="color:#888;font-size:12px;font-weight:400">We'll verify your payment and upgrade your account within a few minutes. Check your email.</span>
         </div>`;
     } else {
       alert(data.error || 'Submission failed.');
