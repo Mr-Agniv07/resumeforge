@@ -836,34 +836,53 @@ async function downloadPDF() {
   const btn = document.getElementById('dl-btn');
   const el = activeTab==='cv' ? document.getElementById('cv-wrap') : document.getElementById('cl-doc');
   const fname = (R.name||'resume').replace(/\s+/g,'-').toLowerCase();
-  const filename = activeTab==='cv' ? `${fname}-cv.pdf` : `${fname}-cover-letter.pdf`;
-
-  const wasHidden = el.style.display === 'none';
-  if (wasHidden) el.style.display = 'block';
+  const title = activeTab==='cv' ? `${fname}-cv` : `${fname}-cover-letter`;
 
   const prevBtnText = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = 'Preparing PDF…'; }
 
   try {
-    // Ensure web fonts are fully loaded before rasterizing, or the canvas can come out blank.
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
 
-    await html2pdf().set({
-      margin:[8,8,8,8], filename,
-      image:{type:'jpeg',quality:0.98},
-      html2canvas:{
-        scale:2, useCORS:true, letterRendering:true, backgroundColor:'#ffffff',
-        // Fixes blank output when the element is scrolled below the fold.
-        scrollX:0, scrollY:-window.scrollY,
-        windowWidth: document.documentElement.offsetWidth
-      },
-      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
-    }).from(el).save();
+    // Collect the page's own stylesheets so the printed document looks identical.
+    const styleHTML = Array.from(document.querySelectorAll('style')).map(s => s.outerHTML).join('\n');
+    const fontLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map(l => l.outerHTML).join('\n');
+
+    // Build a clean, print-only document containing just the chosen element.
+    const doc = `<!doctype html><html><head><meta charset="utf-8">
+<title>${title}</title>
+${fontLinks}
+${styleHTML}
+<style>
+  @page { size: A4; margin: 8mm; }
+  html, body { margin:0; padding:0; background:#fff; }
+  /* Force the document visible and remove screen-only chrome */
+  #cv-wrap, #cl-doc { display:block !important; box-shadow:none !important; margin:0 auto !important; max-width:none !important; width:100%; }
+  @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+</style>
+</head><body>${el.outerHTML}</body></html>`;
+
+    // Render in a hidden iframe and trigger the browser's native print → "Save as PDF".
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+    document.body.appendChild(iframe);
+
+    const idoc = iframe.contentWindow.document;
+    idoc.open(); idoc.write(doc); idoc.close();
+
+    const printAndCleanup = async () => {
+      if (idoc.fonts && idoc.fonts.ready) { try { await idoc.fonts.ready; } catch {} }
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => iframe.remove(), 1000);
+    };
+
+    if (idoc.readyState === 'complete') printAndCleanup();
+    else iframe.contentWindow.addEventListener('load', printAndCleanup);
   } catch (e) {
     console.error('PDF generation failed:', e);
     alert('Sorry — PDF export failed. Please try again.');
   } finally {
-    if (wasHidden) el.style.display = 'none';
     if (btn) { btn.disabled = false; btn.textContent = prevBtnText; }
   }
 }
