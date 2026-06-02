@@ -16,6 +16,9 @@ require("dotenv").config();
 
 const app = express();
 
+app.set("trust proxy", 1);
+
+
 // ── Security ─────────────────────────────────────────────────
 app.use(helmet({ crossOriginResourcePolicy: false, contentSecurityPolicy: false }));
 app.use(cors({ origin: "*", methods: ["GET","POST","PATCH"], allowedHeaders: ["Content-Type","Authorization"] }));
