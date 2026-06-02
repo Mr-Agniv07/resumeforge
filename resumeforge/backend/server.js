@@ -123,7 +123,13 @@ const mailer = nodemailer.createTransport({
     pass: process.env.MAIL_PASS,
   },
 });
-
+mailer.verify((err, success) => {
+  if (err) {
+    console.error("SMTP VERIFY ERROR:", err);
+  } else {
+    console.log("SMTP READY");
+  }
+});
 
 async function sendMagicLink(email, token) {
   const link = `${process.env.FRONTEND_URL}/login?token=${token}`;
