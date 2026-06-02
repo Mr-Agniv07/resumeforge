@@ -4,15 +4,17 @@
 // ============================================================
 
 const express   = require("express");
+const { Resend } = require("resend");
 const cors      = require("cors");
 const helmet    = require("helmet");
 const rateLimit = require("express-rate-limit");
 const Anthropic = require("@anthropic-ai/sdk");
 const mongoose  = require("mongoose");
 const jwt       = require("jsonwebtoken");
-const nodemailer= require("nodemailer");
 const crypto    = require("crypto");
 require("dotenv").config();
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const app = express();
 
@@ -114,71 +116,39 @@ function requireAdmin(req, res, next) {
 }
 
 // ── Email (Nodemailer via Gmail SMTP) ─────────────────────────
-const mailer = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
-  },
-});
-mailer.verify((err, success) => {
-  if (err) {
-    console.error("SMTP VERIFY ERROR:", err);
-  } else {
-    console.log("SMTP READY");
-  }
-});
-
-// async function sendMagicLink(email, token) {
-//   const link = `${process.env.FRONTEND_URL}/login?token=${token}`;
-//   await mailer.sendMail({
-//     from: `"ResumeForge" <${process.env.MAIL_USER}>`,
-//     to: email,
-//     subject: "Your ResumeForge login link",
-//     html: `
-//       <div style="font-family:sans-serif;max-width:480px;margin:auto">
-//         <h2 style="color:#0f0e0c">Sign in to ResumeForge</h2>
-//         <p>Click the button below to log in. Link expires in 15 minutes.</p>
-//         <a href="${link}" style="display:inline-block;background:#c9a84c;color:#0f0e0c;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">Log in →</a>
-//         <p style="color:#888;font-size:12px">If you didn't request this, ignore this email.</p>
-//       </div>`,
-//   });
-// }
-
 async function sendMagicLink(email, token) {
-  console.log("Starting sendMail to:", email);
-
   const link = `${process.env.FRONTEND_URL}/login?token=${token}`;
 
-  await mailer.sendMail({
-    from: `"ResumeForge" <${process.env.MAIL_USER}>`,
+  const result = await resend.emails.send({
+    from: "onboarding@resend.dev",
     to: email,
-    subject: "Your ResumeForge login link",
+    subject: "Your ResumeForge Login Link",
     html: `
-      <div>
-        <a href="${link}">Login</a>
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2>Sign in to ResumeForge</h2>
+        <p>Click below to login. Link expires in 15 minutes.</p>
+
+        <a href="${link}"
+           style="display:inline-block;padding:12px 24px;background:#c9a84c;color:black;text-decoration:none;border-radius:8px;">
+          Log In
+        </a>
       </div>
-    `,
+    `
   });
 
-  console.log("sendMail completed");
+  console.log("Resend result:", result);
 }
 
 async function sendProConfirmation(email, name, plan) {
-  await mailer.sendMail({
-    from: `"ResumeForge" <${process.env.MAIL_USER}>`,
+  await resend.emails.send({
+    from: "onboarding@resend.dev",
     to: email,
     subject: "You're now a ResumeForge Pro member 🎉",
     html: `
-      <div style="font-family:sans-serif;max-width:480px;margin:auto">
-        <h2 style="color:#0f0e0c">Welcome to Pro, ${name||"friend"}!</h2>
-        <p>Your payment has been verified and your account has been upgraded.</p>
-        <p><strong>Plan:</strong> ${plan === "pro" ? "Pro Monthly (₹499)" : "Single CV (₹199)"}</p>
-        <p>Log in and create unlimited CVs now.</p>
-        <a href="${process.env.FRONTEND_URL}" style="display:inline-block;background:#c9a84c;color:#0f0e0c;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">Go to ResumeForge →</a>
-      </div>`,
+      <h2>Welcome to Pro, ${name || "friend"}!</h2>
+      <p>Your payment has been verified.</p>
+      <p>Plan: ${plan}</p>
+    `
   });
 }
 
@@ -209,13 +179,9 @@ app.post("/api/auth/magic", async (req, res) => {
     await sendMagicLink(email, token);
     res.json({ success: true, message: "Magic link sent! Check your email." });
   } catch (err) {
-  console.error("MAIL ERROR FULL:", err);
-  res.status(500).json({ error: "Failed to send email. Try again." });
-}
-  // catch (err) {
-  //   console.error("Mail error:", err.message);
-  //   res.status(500).json({ error: "Failed to send email. Try again." });
-  // }
+    console.error("Mail error:", err.message);
+    res.status(500).json({ error: "Failed to send email. Try again." });
+  }
 });
 
 // GET /api/auth/verify?token=xxx  — exchange magic token for JWT
