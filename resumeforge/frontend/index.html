@@ -831,19 +831,41 @@ function showTab(tab, el) {
   document.getElementById('dl-btn').textContent    = tab==='cv'?'⬇ Download CV PDF':'⬇ Download Cover Letter PDF';
 }
 
-function downloadPDF() {
+async function downloadPDF() {
   if (!R) return;
+  const btn = document.getElementById('dl-btn');
   const el = activeTab==='cv' ? document.getElementById('cv-wrap') : document.getElementById('cl-doc');
   const fname = (R.name||'resume').replace(/\s+/g,'-').toLowerCase();
   const filename = activeTab==='cv' ? `${fname}-cv.pdf` : `${fname}-cover-letter.pdf`;
+
   const wasHidden = el.style.display === 'none';
   if (wasHidden) el.style.display = 'block';
-  html2pdf().set({
-    margin:[8,8,8,8], filename,
-    image:{type:'jpeg',quality:0.98},
-    html2canvas:{scale:2,useCORS:true,letterRendering:true},
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
-  }).from(el).save().then(() => { if (wasHidden) el.style.display = 'none'; });
+
+  const prevBtnText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Preparing PDF…'; }
+
+  try {
+    // Ensure web fonts are fully loaded before rasterizing, or the canvas can come out blank.
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+
+    await html2pdf().set({
+      margin:[8,8,8,8], filename,
+      image:{type:'jpeg',quality:0.98},
+      html2canvas:{
+        scale:2, useCORS:true, letterRendering:true, backgroundColor:'#ffffff',
+        // Fixes blank output when the element is scrolled below the fold.
+        scrollX:0, scrollY:-window.scrollY,
+        windowWidth: document.documentElement.offsetWidth
+      },
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+    }).from(el).save();
+  } catch (e) {
+    console.error('PDF generation failed:', e);
+    alert('Sorry — PDF export failed. Please try again.');
+  } finally {
+    if (wasHidden) el.style.display = 'none';
+    if (btn) { btn.disabled = false; btn.textContent = prevBtnText; }
+  }
 }
 
 function copyText() {
