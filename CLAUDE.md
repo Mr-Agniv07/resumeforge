@@ -57,7 +57,7 @@ Note: the root `.gitignore` ignores `README.md`, `node_modules/`, and `.env`.
 **`refreshUser(user)` is central** — call it on every authenticated request. It (a) auto-downgrades expired *time-limited* Pro plans (`proUntil < now` → `free`; lifetime Pro keeps `proUntil = null` and never expires), and (b) resets the monthly `cvCount` once `countResetAt` passes. There is no cron job.
 
 **Pricing model — credits + lifetime Pro (the `PLANS` catalogue in `server.js` is the source of truth):**
-- `single` ₹15 → +1 credit · `pack10` ₹59 → +10 credits · `pack20` ₹99 → +20 credits · `pro` ₹499 → lifetime unlimited.
+- `single` ₹15 → +1 credit · `pack10` ₹59 → +10 credits · `pro` ₹499 → lifetime unlimited.
 - `User.credits` are paid one-off generations that never expire. `User.signedIn` is true only after Google auth.
 - **Free monthly allowance (`FREE_MONTHLY_LIMIT`) applies only to signed-in users.** Anonymous purchasers get *zero* free CVs — only their credits.
 

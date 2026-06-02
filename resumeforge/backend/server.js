@@ -60,7 +60,7 @@ const paymentSchema = new mongoose.Schema({
   name:        { type: String, default: "" },
   utr:         { type: String, required: true, trim: true },
   amount:      { type: Number, required: true },
-  plan:        { type: String, enum: ["pro","single","pack10","pack20"], required: true },
+  plan:        { type: String, enum: ["pro","single","pack10"], required: true },
   anonymous:   { type: Boolean, default: false }, // purchased without signing in
   status:      { type: String, enum: ["pending","approved","rejected"], default: "pending" },
   adminNote:   { type: String, default: "" },
@@ -76,7 +76,6 @@ const Payment = mongoose.model("Payment", paymentSchema);
 const PLANS = {
   single: { amount: 15,  credits: 1,  lifetime: false, label: "Single CV"       },
   pack10: { amount: 59,  credits: 10, lifetime: false, label: "10 CV Pack"       },
-  pack20: { amount: 99,  credits: 20, lifetime: false, label: "20 CV Pack"       },
   pro:    { amount: 499, credits: 0,  lifetime: true,  label: "Pro (Lifetime)"   },
 };
 

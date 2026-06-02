@@ -361,11 +361,6 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
       <button class="plan-btn" onclick="pay('pack10')">Get 10 Pack →</button>
     </div>
     <div class="plan-card">
-      <div class="plan-name">20 CV Pack</div><div class="plan-price">₹99</div><div class="plan-period">20 CVs · credits never expire</div>
-      <ul class="plan-feats"><li>20 CVs &amp; cover letters</li><li>Under ₹5 per CV</li><li>Credits never expire</li><li>PDF + text export</li></ul>
-      <button class="plan-btn" onclick="pay('pack20')">Get 20 Pack →</button>
-    </div>
-    <div class="plan-card">
       <div class="plan-name">Pro · Lifetime</div><div class="plan-price">₹499</div><div class="plan-period">one-time · forever</div>
       <ul class="plan-feats"><li>Unlimited CVs forever</li><li>LinkedIn rewrite</li><li>No monthly fees, ever</li><li>Priority speed</li></ul>
       <button class="plan-btn" onclick="pay('pro')">Get Lifetime Pro →</button>
@@ -441,7 +436,6 @@ const UPI_NAME   = "ResumeForge";
 const PLANS = {
   single: { amount: 15,  desc: "Single CV — 1 generation"        },
   pack10: { amount: 59,  desc: "10 CV Pack — 10 generations"     },
-  pack20: { amount: 99,  desc: "20 CV Pack — 20 generations"     },
   pro:    { amount: 499, desc: "Pro — lifetime unlimited access" },
 };
 
