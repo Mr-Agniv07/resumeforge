@@ -46,7 +46,9 @@ const userSchema = new mongoose.Schema({
   picture:      { type: String, default: "" },
   plan:         { type: String, enum: ["free","pro"], default: "free" },
   proSince:     { type: Date, default: null },
-  proUntil:     { type: Date, default: null },
+  proUntil:     { type: Date, default: null },   // null + plan "pro" = lifetime (never expires)
+  credits:      { type: Number, default: 0 },     // paid one-off generations (single / packs)
+  signedIn:     { type: Boolean, default: false },// true once they authenticate via Google
   cvCount:      { type: Number, default: 0 },
   countResetAt: { type: Date, default: () => nextMonthReset() },
   createdAt:    { type: Date, default: Date.now },
@@ -58,7 +60,8 @@ const paymentSchema = new mongoose.Schema({
   name:        { type: String, default: "" },
   utr:         { type: String, required: true, trim: true },
   amount:      { type: Number, required: true },
-  plan:        { type: String, enum: ["pro","single"], required: true },
+  plan:        { type: String, enum: ["pro","single","pack10","pack20"], required: true },
+  anonymous:   { type: Boolean, default: false }, // purchased without signing in
   status:      { type: String, enum: ["pending","approved","rejected"], default: "pending" },
   adminNote:   { type: String, default: "" },
   submittedAt: { type: Date, default: Date.now },
@@ -67,6 +70,15 @@ const paymentSchema = new mongoose.Schema({
 
 const User    = mongoose.model("User",    userSchema);
 const Payment = mongoose.model("Payment", paymentSchema);
+
+// ── Plan catalogue ────────────────────────────────────────────
+// amount = price in ₹ · credits = generations granted · lifetime = unlimited Pro
+const PLANS = {
+  single: { amount: 15,  credits: 1,  lifetime: false, label: "Single CV"       },
+  pack10: { amount: 59,  credits: 10, lifetime: false, label: "10 CV Pack"       },
+  pack20: { amount: 99,  credits: 20, lifetime: false, label: "20 CV Pack"       },
+  pro:    { amount: 499, credits: 0,  lifetime: true,  label: "Pro (Lifetime)"   },
+};
 
 // ── Helpers ───────────────────────────────────────────────────
 function signJWT(user) {
@@ -96,17 +108,51 @@ function requireAdmin(req, res, next) {
 }
 
 async function refreshUser(user) {
-  // Auto-expire Pro plan
+  // Auto-expire time-limited Pro plans (lifetime Pro keeps proUntil = null and never expires)
   if (user.plan === "pro" && user.proUntil && user.proUntil < new Date()) {
     user.plan = "free"; user.proUntil = null;
   }
-  // Reset monthly counter
+  // Reset monthly free counter
   if (new Date() > user.countResetAt) {
     user.cvCount = 0;
     user.countResetAt = nextMonthReset();
   }
   user.lastActiveAt = new Date();
   await user.save();
+}
+
+const FREE_LIMIT = () => parseInt(process.env.FREE_MONTHLY_LIMIT) || 2;
+
+// Free monthly allowance only applies to signed-in (Google) users.
+function freeRemaining(user) {
+  if (!user.signedIn) return 0;
+  return Math.max(0, FREE_LIMIT() - user.cvCount);
+}
+
+// Shape returned to the frontend for any user.
+function userPayload(user) {
+  const isPro = user.plan === "pro";
+  return {
+    email:     user.email,
+    name:      user.name,
+    picture:   user.picture,
+    plan:      user.plan,
+    isPro,
+    credits:   user.credits,
+    signedIn:  user.signedIn,
+    cvCount:   user.cvCount,
+    cvLimit:   isPro ? null : (user.signedIn ? FREE_LIMIT() : 0),
+    remaining: isPro ? null : freeRemaining(user) + user.credits,
+    proUntil:  user.proUntil,
+  };
+}
+
+// Reads a JWT if present but never blocks the request (used for anonymous-aware routes).
+function readAuth(req) {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return null;
+  try { return jwt.verify(token, process.env.JWT_SECRET); }
+  catch { return null; }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -131,37 +177,43 @@ app.post("/api/auth/google", async (req, res) => {
     // Find or create user
     let user = await User.findOne({ email });
     if (!user) {
-      user = await User.create({ email, name: name||"", picture: picture||"" });
+      user = await User.create({ email, name: name||"", picture: picture||"", signedIn: true });
       console.log(`✨ New user: ${email}`);
     } else {
-      // Update name/picture in case they changed
-      user.name    = name || user.name;
-      user.picture = picture || user.picture;
+      // Update name/picture in case they changed; mark as signed-in
+      user.name     = name || user.name;
+      user.picture  = picture || user.picture;
+      user.signedIn = true;
     }
 
     await refreshUser(user);
 
     const token = signJWT(user);
-    const FREE_LIMIT = parseInt(process.env.FREE_MONTHLY_LIMIT) || 2;
-
-    return res.json({
-      success: true,
-      token,
-      user: {
-        email:     user.email,
-        name:      user.name,
-        picture:   user.picture,
-        plan:      user.plan,
-        isPro:     user.plan === "pro",
-        cvCount:   user.cvCount,
-        cvLimit:   user.plan === "pro" ? null : FREE_LIMIT,
-        remaining: user.plan === "pro" ? null : Math.max(0, FREE_LIMIT - user.cvCount),
-      },
-    });
+    return res.json({ success: true, token, user: userPayload(user) });
   } catch (err) {
     console.error("Google auth error:", err.message);
     res.status(401).json({ error: "Google authentication failed. Please try again." });
   }
+});
+
+// POST /api/auth/claim — anonymous purchaser unlocks a session via email + UTR
+// Body: { email, utr } — must match an APPROVED payment. Returns a JWT so they can generate.
+app.post("/api/auth/claim", async (req, res) => {
+  const email = (req.body.email || "").toLowerCase().trim();
+  const utr   = (req.body.utr || "").trim();
+  if (!email || !utr) return res.status(400).json({ error: "Email and UTR are required." });
+
+  const payment = await Payment.findOne({ email, utr });
+  if (!payment)                       return res.status(404).json({ error: "No payment found for that email and UTR." });
+  if (payment.status === "rejected")  return res.status(403).json({ error: "This payment was rejected." });
+  if (payment.status !== "approved")  return res.status(409).json({ error: "Payment not verified yet. Please wait a few minutes and try again." });
+
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ error: "Account not found." });
+
+  await refreshUser(user);
+  const token = signJWT(user);
+  res.json({ success: true, token, user: userPayload(user) });
 });
 
 // GET /api/auth/me — get current user info (called on page load)
@@ -170,19 +222,7 @@ app.get("/api/auth/me", requireAuth, async (req, res) => {
   if (!user) return res.status(404).json({ error: "User not found." });
 
   await refreshUser(user);
-  const FREE_LIMIT = parseInt(process.env.FREE_MONTHLY_LIMIT) || 2;
-
-  res.json({
-    email:     user.email,
-    name:      user.name,
-    picture:   user.picture,
-    plan:      user.plan,
-    isPro:     user.plan === "pro",
-    cvCount:   user.cvCount,
-    cvLimit:   user.plan === "pro" ? null : FREE_LIMIT,
-    remaining: user.plan === "pro" ? null : Math.max(0, FREE_LIMIT - user.cvCount),
-    proUntil:  user.proUntil,
-  });
+  res.json(userPayload(user));
 });
 
 // ════════════════════════════════════════════════════════════
@@ -195,7 +235,7 @@ app.post("/api/payment/submit", async (req, res) => {
   if (!email || !utr || !plan) {
     return res.status(400).json({ error: "Email, UTR, and plan are required." });
   }
-  if (!["pro","single"].includes(plan)) {
+  if (!PLANS[plan]) {
     return res.status(400).json({ error: "Invalid plan." });
   }
 
@@ -205,18 +245,20 @@ app.post("/api/payment/submit", async (req, res) => {
     return res.status(409).json({ error: "This UTR has already been submitted." });
   }
 
-  const amount = plan === "pro" ? 499 : 199;
-  const payment = await Payment.create({ email, name, utr, amount, plan });
+  // A valid JWT means the buyer is signed in; otherwise the purchase is anonymous.
+  const anonymous = !readAuth(req);
+  const amount    = PLANS[plan].amount;
+  const payment   = await Payment.create({ email, name, utr, amount, plan, anonymous });
 
   // Ensure user record exists even if they haven't logged in yet
   const user = await User.findOne({ email });
   if (!user) await User.create({ email, name: name||"" });
 
-  console.log(`💰 Payment submitted: ${email} | UTR: ${utr} | Plan: ${plan}`);
+  console.log(`💰 Payment submitted: ${email} | UTR: ${utr} | Plan: ${plan}${anonymous ? " (anon)" : ""}`);
 
   res.json({
     success: true,
-    message: "Payment submitted! We'll verify within few minutes and upgrade your account.",
+    message: "Payment submitted! We'll verify within few minutes and unlock your account.",
     paymentId: payment._id,
   });
 });
@@ -249,18 +291,25 @@ app.patch("/api/admin/payments/:id/approve", requireAdmin, async (req, res) => {
   payment.reviewedAt = new Date();
   await payment.save();
 
-  // Upgrade the user
+  // Upgrade / credit the user
   let user = await User.findOne({ email: payment.email });
   if (!user) user = await User.create({ email: payment.email, name: payment.name });
 
-  user.plan     = "pro";
-  user.proSince = new Date();
-  // Pro monthly = 31 days, single CV = 7 days
-  user.proUntil = new Date(Date.now() + (payment.plan === "pro" ? 31 : 7) * 24 * 60 * 60 * 1000);
+  const cfg = PLANS[payment.plan] || PLANS.single;
+  let summary;
+  if (cfg.lifetime) {
+    user.plan     = "pro";
+    user.proSince = new Date();
+    user.proUntil = null;                 // lifetime — never expires
+    summary = `${payment.email} upgraded to Pro (lifetime).`;
+  } else {
+    user.credits += cfg.credits;          // single / packs add generation credits
+    summary = `${payment.email} credited +${cfg.credits} (total ${user.credits}).`;
+  }
   await user.save();
 
-  console.log(`✅ Approved: ${payment.email} → Pro until ${user.proUntil}`);
-  res.json({ success: true, message: `${payment.email} upgraded to Pro.` });
+  console.log(`✅ Approved: ${summary}`);
+  res.json({ success: true, message: summary });
 });
 
 // PATCH /api/admin/payments/:id/reject
@@ -299,11 +348,19 @@ app.post("/api/generate", requireAuth, async (req, res) => {
 
   await refreshUser(user);
 
-  const FREE_LIMIT = parseInt(process.env.FREE_MONTHLY_LIMIT) || 2;
+  // Decide which allowance pays for this generation:
+  //   Pro      → unlimited
+  //   Free     → monthly allowance (signed-in users only), preserved before paid credits
+  //   Credits  → paid single / pack generations
+  const isPro     = user.plan === "pro";
+  const useFree   = !isPro && freeRemaining(user) > 0;
+  const useCredit = !isPro && !useFree && user.credits > 0;
 
-  if (user.plan === "free" && user.cvCount >= FREE_LIMIT) {
-    return res.status(429).json({
-      error: `Free limit reached (${FREE_LIMIT} CVs/month). Upgrade to Pro for unlimited!`,
+  if (!isPro && !useFree && !useCredit) {
+    return res.status(402).json({
+      error: user.signedIn
+        ? `You've used your ${FREE_LIMIT()} free CVs this month and have no credits left. Buy a pack or go Pro for unlimited!`
+        : "No credits left. Buy a single CV, a pack, or go Pro for unlimited!",
       upgradeUrl: "#pricing",
     });
   }
@@ -367,7 +424,9 @@ Rules: infer all details from experience. Make bullets punchy and quantified. Us
     text = text.replace(/```json|```/g, "").trim();
     const resume = JSON.parse(text);
 
+    // Charge the allowance chosen above. cvCount always increments for analytics.
     user.cvCount++;
+    if (useCredit) user.credits = Math.max(0, user.credits - 1);
     await user.save();
 
     return res.json({
@@ -376,7 +435,8 @@ Rules: infer all details from experience. Make bullets punchy and quantified. Us
       usage: {
         plan:      user.plan,
         cvCount:   user.cvCount,
-        remaining: user.plan === "pro" ? null : Math.max(0, FREE_LIMIT - user.cvCount),
+        credits:   user.credits,
+        remaining: isPro ? null : freeRemaining(user) + user.credits,
       },
     });
   } catch (err) {

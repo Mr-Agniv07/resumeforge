@@ -287,7 +287,7 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
 
   <!-- Login prompt (not logged in) -->
   <div class="login-prompt" id="login-prompt">
-    <p><strong>Sign in to generate your CV.</strong><br/>Free users get 2 CVs per month. Upgrade to Pro for unlimited.</p>
+    <p><strong>Sign in to generate your CV.</strong><br/>Get 2 free CVs per month with Google — or grab a single CV for ₹15 without signing in.</p>
     <div id="google-signin-btn"></div>
   </div>
 
@@ -345,20 +345,30 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
   <p style="font-size:15px;color:var(--muted)">Start free. Upgrade when you're ready.</p>
   <div class="plans-grid">
     <div class="plan-card">
-      <div class="plan-name">Free</div><div class="plan-price">₹0</div><div class="plan-period">forever</div>
-      <ul class="plan-feats"><li>2 CVs per month</li><li>Beautiful PDF download</li><li>Cover letter</li><li>ATS optimized</li></ul>
+      <div class="plan-name">Free</div><div class="plan-price">₹0</div><div class="plan-period">forever · sign-in required</div>
+      <ul class="plan-feats"><li>2 CVs per month</li><li>Beautiful PDF download</li><li>Cover letter included</li><li>ATS optimized</li></ul>
       <button class="plan-btn" onclick="scroll2('builder')">Start free</button>
     </div>
+    <div class="plan-card">
+      <div class="plan-name">Single CV</div><div class="plan-price">₹15</div><div class="plan-period">one-time · no sign-in</div>
+      <ul class="plan-feats"><li>1 CV + cover letter</li><li>No account needed</li><li>Full premium quality</li><li>PDF + text export</li></ul>
+      <button class="plan-btn" onclick="pay('single')">Buy 1 CV →</button>
+    </div>
     <div class="plan-card featured">
-      <div class="plan-badge">Most popular</div>
-      <div class="plan-name">Pro</div><div class="plan-price">₹499</div><div class="plan-period">per month</div>
-      <ul class="plan-feats"><li>Unlimited CVs</li><li>LinkedIn rewrite</li><li>ATS score report</li><li>Priority speed</li><li>Email support</li></ul>
-      <button class="plan-btn" onclick="pay('pro')">Get Pro →</button>
+      <div class="plan-badge">Best value</div>
+      <div class="plan-name">10 CV Pack</div><div class="plan-price">₹59</div><div class="plan-period">10 CVs · credits never expire</div>
+      <ul class="plan-feats"><li>10 CVs &amp; cover letters</li><li>Just ₹5.9 per CV</li><li>Credits never expire</li><li>PDF + text export</li></ul>
+      <button class="plan-btn" onclick="pay('pack10')">Get 10 Pack →</button>
     </div>
     <div class="plan-card">
-      <div class="plan-name">Pay-per-use</div><div class="plan-price">₹199</div><div class="plan-period">per CV</div>
-      <ul class="plan-feats"><li>One-time payment</li><li>Full premium quality</li><li>PDF + text export</li><li>Cover letter</li></ul>
-      <button class="plan-btn" onclick="pay('single')">Buy one CV</button>
+      <div class="plan-name">20 CV Pack</div><div class="plan-price">₹99</div><div class="plan-period">20 CVs · credits never expire</div>
+      <ul class="plan-feats"><li>20 CVs &amp; cover letters</li><li>Under ₹5 per CV</li><li>Credits never expire</li><li>PDF + text export</li></ul>
+      <button class="plan-btn" onclick="pay('pack20')">Get 20 Pack →</button>
+    </div>
+    <div class="plan-card">
+      <div class="plan-name">Pro · Lifetime</div><div class="plan-price">₹499</div><div class="plan-period">one-time · forever</div>
+      <ul class="plan-feats"><li>Unlimited CVs forever</li><li>LinkedIn rewrite</li><li>No monthly fees, ever</li><li>Priority speed</li></ul>
+      <button class="plan-btn" onclick="pay('pro')">Get Lifetime Pro →</button>
     </div>
   </div>
 </section>
@@ -404,8 +414,18 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
     <button class="modal-close" onclick="closeModal('login-modal')">✕</button>
     <div class="login-modal-inner">
       <div class="login-modal-title">Sign in to ResumeForge</div>
-      <div class="login-modal-sub">Sign in with your Google account to generate your professional CV. Free users get 2 CVs per month.</div>
+      <div class="login-modal-sub">Sign in with Google for <b>2 free CVs every month</b>.</div>
       <div id="google-signin-btn-modal"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin:18px 0;color:#bbb;font-size:12px">
+        <span style="flex:1;height:1px;background:#e5e0d5"></span>OR<span style="flex:1;height:1px;background:#e5e0d5"></span>
+      </div>
+      <button class="utr-submit-btn" style="background:var(--gold);color:var(--ink)" onclick="closeModal('login-modal');pay('single')">
+        Buy just 1 CV for ₹15 — no sign-in
+      </button>
+      <div style="font-size:12px;color:#999;margin-top:12px">
+        Already paid for a single CV?
+        <a onclick="unlockWithUTR()" style="color:var(--gold);cursor:pointer;text-decoration:underline">Unlock with your UTR</a>
+      </div>
     </div>
   </div>
 </div>
@@ -414,8 +434,16 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
 // ── CONFIG ─────────────────────────────────────────────────
 const BACKEND   = "https://resumeforge-hun8.onrender.com";
 const GOOGLE_ID = "774944689389-0mfm5dd8vg7slkcp65292dkn6nc2da7o.apps.googleusercontent.com";
-const UPI_ID     = "9088037677@ybl";                    
+const UPI_ID     = "9088037677@ybl";
 const UPI_NAME   = "ResumeForge";
+
+// Paid plans — must mirror the backend PLANS catalogue.
+const PLANS = {
+  single: { amount: 15,  desc: "Single CV — 1 generation"        },
+  pack10: { amount: 59,  desc: "10 CV Pack — 10 generations"     },
+  pack20: { amount: 99,  desc: "20 CV Pack — 20 generations"     },
+  pro:    { amount: 499, desc: "Pro — lifetime unlimited access" },
+};
 
 let R           = null;
 let activeTab   = "cv";
@@ -514,10 +542,18 @@ function renderAuth(user) {
   navUser.style.display     = 'flex';
   navLoginBtn.style.display = 'none';
 
-  const isPro = user.plan === 'pro';
-  const usageText = isPro
-    ? 'Pro plan — unlimited CVs'
-    : `${user.remaining ?? 0} of ${user.cvLimit ?? 2} free CVs remaining this month`;
+  const isPro   = user.plan === 'pro';
+  const credits = user.credits || 0;
+  const freeLeft = Math.max(0, (user.remaining ?? 0) - credits);
+  let usageText;
+  if (isPro) {
+    usageText = 'Pro · Lifetime — unlimited CVs';
+  } else {
+    const parts = [];
+    if (user.signedIn) parts.push(`${freeLeft} free this month`);
+    if (credits > 0)   parts.push(`${credits} credit${credits === 1 ? '' : 's'}`);
+    usageText = parts.length ? parts.join(' + ') + ' remaining' : 'No CVs left — see plans below';
+  }
 
   // Auth bar
   const initials = getInitials(user.name || user.email);
@@ -567,7 +603,7 @@ async function generate() {
   if (!exp || !role) { alert('Please fill in your Experience and Target Role.'); return; }
 
   const jwt = localStorage.getItem('rf_token');
-  if (!jwt) { openLoginModal(); return; }
+  if (!jwt) { openLoginModal(); return; }   // not signed in → offers free sign-in or ₹15 single CV
 
   const btn = document.getElementById('gen-btn');
   const err = document.getElementById('err');
@@ -592,7 +628,7 @@ async function generate() {
 
     if (!res.ok || !data.resume) {
       if (res.status === 401) { logout(); err.textContent = '⚠ Session expired. Please sign in again.'; }
-      else if (res.status === 429) { err.innerHTML = `⚠ ${data.error} <a href="#pricing" style="color:var(--gold)">Upgrade →</a>`; }
+      else if (res.status === 402 || res.status === 429) { err.innerHTML = `⚠ ${data.error} <a href="#pricing" style="color:var(--gold)">See plans →</a>`; }
       else { err.textContent = '⚠ ' + (data.error || 'Generation failed.'); }
       err.style.display = 'block';
       btn.disabled = false; btn.innerHTML = '✦ Try again';
@@ -605,6 +641,7 @@ async function generate() {
     // Update usage display
     if (data.usage && currentUser) {
       currentUser.cvCount   = data.usage.cvCount;
+      currentUser.credits   = data.usage.credits;
       currentUser.remaining = data.usage.remaining;
       renderAuth(currentUser);
     }
@@ -622,8 +659,9 @@ async function generate() {
 
 // ── PAY MODAL ──────────────────────────────────────────────
 function pay(plan) {
-  const amount = plan === 'pro' ? '499' : '199';
-  const desc   = plan === 'pro' ? 'ResumeForge Pro — 1 Month' : 'ResumeForge Single CV';
+  const cfg    = PLANS[plan] || PLANS.single;
+  const amount = String(cfg.amount);
+  const desc   = cfg.desc;
 
   document.getElementById('pay-desc').textContent   = desc;
   document.getElementById('pay-amount').textContent = '₹' + amount;
@@ -670,17 +708,31 @@ async function submitUTR() {
   btn.disabled = true; btn.textContent = 'Submitting…';
 
   try {
+    // Include the JWT when signed in so the backend doesn't flag the payment as anonymous.
+    const token   = localStorage.getItem('rf_token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const res  = await fetch(`${BACKEND}/api/payment/submit`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers,
       body: JSON.stringify({ email, name, utr, plan })
     });
     const data = await res.json();
     if (data.success) {
+      const signedIn = !!localStorage.getItem('rf_token');
+      const unlock = signedIn ? '' : `
+          <button class="utr-submit-btn" style="margin-top:14px"
+                  onclick="claimAndGenerate('${email.replace(/'/g,"")}','${utr.replace(/'/g,"")}')">
+            ✓ I've been verified — Unlock &amp; generate
+          </button>
+          <div style="color:#888;font-size:11px;font-weight:400;margin-top:8px">
+            Once we approve your payment (a few minutes), click the button above to generate — no sign-in needed.
+          </div>`;
       document.getElementById('utr-form-wrap').innerHTML = `
         <div class="utr-success">
           ✓ Submitted successfully!<br/>
-          <span style="color:#888;font-size:12px;font-weight:400">We'll verify your payment and upgrade your account within a few minutes. Check your email.</span>
-        </div>`;
+          <span style="color:#888;font-size:12px;font-weight:400">We'll verify your payment within a few minutes.</span>
+        </div>${unlock}`;
     } else {
       alert(data.error || 'Submission failed.');
       btn.disabled = false; btn.textContent = 'Submit for verification →';
@@ -689,6 +741,38 @@ async function submitUTR() {
     alert('Cannot reach server.');
     btn.disabled = false; btn.textContent = 'Submit for verification →';
   }
+}
+
+// Anonymous purchaser unlocks a session with email + UTR, then generates immediately.
+async function claimAndGenerate(email, utr) {
+  try {
+    const res  = await fetch(`${BACKEND}/api/auth/claim`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, utr })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      alert(data.error || 'Could not unlock yet. Please try again shortly.');
+      return;
+    }
+    localStorage.setItem('rf_token', data.token);
+    currentUser = data.user;
+    renderAuth(currentUser);
+    closeModal('pay-modal');
+    generate();
+  } catch {
+    alert('Cannot reach server.');
+  }
+}
+
+// Returning anonymous buyer (after page reload) can unlock from the login modal.
+async function unlockWithUTR() {
+  const email = prompt('Email used for the payment:');
+  if (!email) return;
+  const utr = prompt('UTR / Transaction ID from your payment:');
+  if (!utr) return;
+  closeModal('login-modal');
+  claimAndGenerate(email.trim(), utr.trim());
 }
 
 function copyUPI() {

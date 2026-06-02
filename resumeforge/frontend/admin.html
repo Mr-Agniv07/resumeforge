@@ -63,6 +63,8 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 .plan-badge{display:inline-block;padding:2px 9px;border-radius:4px;font-size:10px;font-weight:600;font-family:var(--mono);letter-spacing:0.5px}
 .plan-free{background:#1a1a1a;color:var(--text2);border:1px solid var(--border2)}
 .plan-pro{background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3)}
+.plan-credit{background:rgba(61,122,82,0.15);color:#5dbd7e;border:1px solid rgba(61,122,82,0.3)}
+.tag-anon{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:600;font-family:var(--mono);letter-spacing:0.5px;background:rgba(192,57,43,0.12);color:#e07060;border:1px solid rgba(192,57,43,0.25);vertical-align:middle}
 .status-badge{display:inline-block;padding:2px 9px;border-radius:4px;font-size:10px;font-weight:600;font-family:var(--mono)}
 .status-pending{background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.25)}
 .status-approved{background:rgba(61,122,82,0.15);color:#5dbd7e;border:1px solid rgba(61,122,82,0.3)}
@@ -288,10 +290,10 @@ function renderPaymentsTable(payments, status){
   }
   const rows = payments.map(p=>`
     <tr>
-      <td><div style="font-weight:500">${p.name||'—'}</div><div class="mono" style="color:#666;margin-top:2px">${p.email}</div></td>
+      <td><div style="font-weight:500">${p.name||'—'}${p.anonymous?'<span class="tag-anon">ANON · NO SIGN-IN</span>':''}</div><div class="mono" style="color:#666;margin-top:2px">${p.email}</div></td>
       <td><span class="mono" style="color:#e8e8e8">${p.utr}</span></td>
       <td><span class="mono">₹${p.amount}</span></td>
-      <td><span class="plan-badge ${p.plan==='pro'?'plan-pro':'plan-free'}">${p.plan}</span></td>
+      <td><span class="plan-badge ${planClass(p.plan)}">${planLabel(p.plan)}</span></td>
       <td><span class="mono" style="color:#666">${fmtDate(p.submittedAt)}</span></td>
       <td><span class="status-badge status-${p.status}">${p.status}</span></td>
       <td>
@@ -379,25 +381,31 @@ function renderUsersTable(users){
   }
   const rows = users.map(u=>`
     <tr>
-      <td><div style="font-weight:500">${u.name||'—'}</div><div class="mono" style="color:#666;margin-top:2px">${u.email}</div></td>
-      <td><span class="plan-badge ${u.plan==='pro'?'plan-pro':'plan-free'}">${u.plan}</span></td>
+      <td><div style="font-weight:500">${u.name||'—'}${u.signedIn===false?'<span class="tag-anon">ANON</span>':''}</div><div class="mono" style="color:#666;margin-top:2px">${u.email}</div></td>
+      <td><span class="plan-badge ${u.plan==='pro'?'plan-pro':(u.credits>0?'plan-credit':'plan-free')}">${u.plan==='pro'?'pro · lifetime':(u.credits>0?'credits':'free')}</span></td>
+      <td><span class="mono" style="color:${u.credits>0?'#5dbd7e':'#666'}">${u.credits||0}</span></td>
       <td><span class="mono">${u.cvCount}</span></td>
-      <td><span class="mono" style="color:#666">${u.proUntil ? fmtDate(u.proUntil) : '—'}</span></td>
       <td><span class="mono" style="color:#666">${fmtDate(u.createdAt)}</span></td>
       <td>
         ${u.plan==='pro'
           ? `<button class="reject-btn" onclick="downgrade('${u._id}','${u.email}')">Downgrade</button>`
-          : `<span style="font-size:11px;color:#444">Free</span>`}
+          : `<span style="font-size:11px;color:#444">—</span>`}
       </td>
     </tr>`).join('');
 
   document.getElementById('users-table').innerHTML = `
     <table>
       <thead><tr>
-        <th>User</th><th>Plan</th><th>CVs Made</th><th>Pro Until</th><th>Joined</th><th>Action</th>
+        <th>User</th><th>Plan</th><th>Credits</th><th>CVs Made</th><th>Joined</th><th>Action</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
+}
+
+// Plan badge styling + label for the payments table.
+function planClass(plan){ return plan==='pro' ? 'plan-pro' : (plan==='free' ? 'plan-free' : 'plan-credit'); }
+function planLabel(plan){
+  return { single:'single · ₹15', pack10:'10-pack', pack20:'20-pack', pro:'pro · lifetime' }[plan] || plan;
 }
 
 async function downgrade(id, email){

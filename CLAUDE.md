@@ -54,15 +54,22 @@ Note: the root `.gitignore` ignores `README.md`, `node_modules/`, and `.env`.
 
 **Admin auth is separate:** `requireAdmin` checks the `x-admin-key` request header against `ADMIN_SECRET`. There is no admin login/session — the key is entered in the admin UI and sent on every request.
 
-**`refreshUser(user)` is central** — call it on every authenticated request. It (a) auto-downgrades expired Pro plans (`proUntil < now` → `free`), and (b) resets the monthly `cvCount` once `countResetAt` passes. This is how plan expiry and free-tier quota reset happen; there is no cron job.
+**`refreshUser(user)` is central** — call it on every authenticated request. It (a) auto-downgrades expired *time-limited* Pro plans (`proUntil < now` → `free`; lifetime Pro keeps `proUntil = null` and never expires), and (b) resets the monthly `cvCount` once `countResetAt` passes. There is no cron job.
 
-**Payment model — manual UPI verification (no payment gateway):**
-1. User pays out-of-band via a UPI QR / UPI ID shown in the frontend, then submits their transaction UTR via `POST /api/payment/submit` (creates a `pending` Payment; duplicate UTRs are rejected).
-2. An admin reviews pending payments in `admin.html` and calls `PATCH /api/admin/payments/:id/approve` or `/reject`.
-3. Approval upgrades the user to `pro` and sets `proUntil` to **now + 31 days** for the `pro` plan or **+7 days** for the `single` plan. Pricing: pro = ₹499, single = ₹199.
+**Pricing model — credits + lifetime Pro (the `PLANS` catalogue in `server.js` is the source of truth):**
+- `single` ₹15 → +1 credit · `pack10` ₹59 → +10 credits · `pack20` ₹99 → +20 credits · `pro` ₹499 → lifetime unlimited.
+- `User.credits` are paid one-off generations that never expire. `User.signedIn` is true only after Google auth.
+- **Free monthly allowance (`FREE_MONTHLY_LIMIT`) applies only to signed-in users.** Anonymous purchasers get *zero* free CVs — only their credits.
+
+**Payment flow — manual UPI verification (no gateway):**
+1. User pays out-of-band via UPI QR/ID, submits UTR via `POST /api/payment/submit` (creates a `pending` Payment; duplicate UTRs rejected). The route flags the payment `anonymous` when no valid JWT is sent.
+2. Admin reviews in `admin.html` → `PATCH /api/admin/payments/:id/approve` or `/reject`.
+3. Approval either sets the user to lifetime `pro` (`proUntil = null`) or adds `credits`, based on `PLANS[payment.plan]`.
+
+**Anonymous single-CV flow (no Google sign-in):** user pays ₹15 → after approval calls `POST /api/auth/claim` with `{ email, utr }`, which verifies an approved payment and issues a JWT. From then on generation works identically to a signed-in user, just charged against credits.
 
 **Generation endpoints:**
-- `POST /api/generate` (auth required) — enforces the free-tier `cvCount` limit, then prompts Claude to return a **raw JSON resume object** (a large fixed schema: summary, experience, education, skills, certifications, projects, languages, coverLetter). The handler strips ``` fences and `JSON.parse`s the response, then increments `cvCount`.
+- `POST /api/generate` (auth required) — picks the allowance in order **Pro (unlimited) → free monthly (signed-in only) → credits**, returns `402` if none, then prompts Claude for a **raw JSON resume object** (large fixed schema). Strips ``` fences, `JSON.parse`s, increments `cvCount`, and decrements `credits` when a credit was used.
 - `POST /api/linkedin` (auth required, **Pro-only**) — rewrites a LinkedIn "About" section.
 
 **Security middleware:** `helmet`, `cors` (origin from `FRONTEND_URL`), and `express-rate-limit` (50 req / 15 min on `/api/`). `trust proxy` is set to 1 for correct client IPs behind Render's proxy.
