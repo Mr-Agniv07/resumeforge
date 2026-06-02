@@ -115,9 +115,15 @@ function requireAdmin(req, res, next) {
 
 // ── Email (Nodemailer via Gmail SMTP) ─────────────────────────
 const mailer = nodemailer.createTransport({
-  service: "gmail",
-  auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
+  },
 });
+
 
 async function sendMagicLink(email, token) {
   const link = `${process.env.FRONTEND_URL}/login?token=${token}`;
