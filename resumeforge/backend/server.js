@@ -131,20 +131,39 @@ mailer.verify((err, success) => {
   }
 });
 
+// async function sendMagicLink(email, token) {
+//   const link = `${process.env.FRONTEND_URL}/login?token=${token}`;
+//   await mailer.sendMail({
+//     from: `"ResumeForge" <${process.env.MAIL_USER}>`,
+//     to: email,
+//     subject: "Your ResumeForge login link",
+//     html: `
+//       <div style="font-family:sans-serif;max-width:480px;margin:auto">
+//         <h2 style="color:#0f0e0c">Sign in to ResumeForge</h2>
+//         <p>Click the button below to log in. Link expires in 15 minutes.</p>
+//         <a href="${link}" style="display:inline-block;background:#c9a84c;color:#0f0e0c;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">Log in →</a>
+//         <p style="color:#888;font-size:12px">If you didn't request this, ignore this email.</p>
+//       </div>`,
+//   });
+// }
+
 async function sendMagicLink(email, token) {
+  console.log("Starting sendMail to:", email);
+
   const link = `${process.env.FRONTEND_URL}/login?token=${token}`;
+
   await mailer.sendMail({
     from: `"ResumeForge" <${process.env.MAIL_USER}>`,
     to: email,
     subject: "Your ResumeForge login link",
     html: `
-      <div style="font-family:sans-serif;max-width:480px;margin:auto">
-        <h2 style="color:#0f0e0c">Sign in to ResumeForge</h2>
-        <p>Click the button below to log in. Link expires in 15 minutes.</p>
-        <a href="${link}" style="display:inline-block;background:#c9a84c;color:#0f0e0c;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">Log in →</a>
-        <p style="color:#888;font-size:12px">If you didn't request this, ignore this email.</p>
-      </div>`,
+      <div>
+        <a href="${link}">Login</a>
+      </div>
+    `,
   });
+
+  console.log("sendMail completed");
 }
 
 async function sendProConfirmation(email, name, plan) {
@@ -190,9 +209,13 @@ app.post("/api/auth/magic", async (req, res) => {
     await sendMagicLink(email, token);
     res.json({ success: true, message: "Magic link sent! Check your email." });
   } catch (err) {
-    console.error("Mail error:", err.message);
-    res.status(500).json({ error: "Failed to send email. Try again." });
-  }
+  console.error("MAIL ERROR FULL:", err);
+  res.status(500).json({ error: "Failed to send email. Try again." });
+}
+  // catch (err) {
+  //   console.error("Mail error:", err.message);
+  //   res.status(500).json({ error: "Failed to send email. Try again." });
+  // }
 });
 
 // GET /api/auth/verify?token=xxx  — exchange magic token for JWT
