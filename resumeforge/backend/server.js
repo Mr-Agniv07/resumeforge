@@ -114,7 +114,7 @@ const PROFESSIONS = {
   },
   design: {
     label: "Design / Creative",
-    guidance: "Tailor for a design/creative role. Use a portfolio-oriented narrative. Emphasize design tools (Figma, Adobe CC), UX/UI process, brand/visual work, and measurable impact (engagement, conversion). The technical skills must be design tools and methods. Always include a portfolio URL.",
+    guidance: "Tailor for a design/creative role. Use a portfolio-oriented narrative. Emphasize design tools (Figma, Adobe CC), UX/UI process, brand/visual work, and measurable impact (engagement, conversion). The technical skills must be design tools and methods.",
     sections: ["Portfolio Highlights", "Awards & Recognition"],
   },
   sales: {
@@ -387,7 +387,7 @@ app.patch("/api/admin/users/:id/downgrade", requireAdmin, async (req, res) => {
 //  CORE — POST /api/generate
 // ════════════════════════════════════════════════════════════
 app.post("/api/generate", requireAuth, async (req, res) => {
-  const { experience, role, company, name, email, phone, location, field } = req.body;
+  const { experience, role, company, name, email, phone, location, linkedin, portfolio, field } = req.body;
   const prof = PROFESSIONS[field] || PROFESSIONS.general;
 
   if (!experience || !role) return res.status(400).json({ error: "experience and role are required." });
@@ -426,11 +426,11 @@ Return ONLY raw JSON (no markdown, no backticks, no explanation):
 {
   "name": "${name||"Candidate"}",
   "title": "Professional title matching the target role",
-  "email": "${email||"email@example.com"}",
-  "phone": "${phone||"+91 98765 43210"}",
-  "location": "${location||"Hyderabad, India"}",
-  "linkedin": "linkedin.com/in/firstname-lastname",
-  "portfolio": "",
+  "email": "${email||""}",
+  "phone": "${phone||""}",
+  "location": "${location||""}",
+  "linkedin": "${linkedin||""}",
+  "portfolio": "${portfolio||""}",
   "summary": "3 sentences: years+skill, key achievement, value for this role",
   "experience": [
     {
@@ -466,9 +466,9 @@ Return ONLY raw JSON (no markdown, no backticks, no explanation):
 }
 
 Rules:
-- Infer all details from experience. Make bullets punchy and quantified. Use strong action verbs.
-- "extraSections": add 1–2 sections that are specifically valuable on a ${prof.label} resume${prof.sections.length ? ` — suggested headings: ${prof.sections.join(", ")}` : ""}. Each "items" entry is one short line (a license/registration no., a publication, a notable case, a portfolio link, an award, etc.). Only include sections you can populate from the experience; if none add value, return "extraSections": [].
-- For ${prof.label}, also fill "portfolio" with a relevant link (portfolio/GitHub/profile) when appropriate, else "".`;
+- Infer professional content (summary, experience, skills, etc.) from the experience text. Make bullets punchy and quantified. Use strong action verbs.
+- CONTACT INFO IS NOT INVENTED. Use name/email/phone/location/linkedin/portfolio EXACTLY as given above. If a value is empty, output an empty string "" for it — never fabricate or guess a LinkedIn URL, portfolio, email, phone, or location.
+- "extraSections": add 1–2 sections that are specifically valuable on a ${prof.label} resume${prof.sections.length ? ` — suggested headings: ${prof.sections.join(", ")}` : ""}. Each "items" entry is one short line (a license/registration no., a publication, a notable case, an award, etc.). Only include sections you can populate from the experience; if none add value, return "extraSections": [].`;
 
   let text;
   try {
@@ -481,6 +481,15 @@ Rules:
     text = message.content.map(b => b.text || "").join("").trim();
     text = text.replace(/```json|```/g, "").trim();
     const resume = JSON.parse(text);
+
+    // Contact details are authoritative from the user — overwrite anything the
+    // model may have echoed/invented. Blank stays blank (the UI hides empties).
+    resume.name      = (name || resume.name || "Candidate").trim();
+    resume.email     = (email    || "").trim();
+    resume.phone     = (phone    || "").trim();
+    resume.location  = (location || "").trim();
+    resume.linkedin  = (linkedin || "").trim();
+    resume.portfolio = (portfolio|| "").trim();
 
     // Charge the allowance chosen above. cvCount always increments for analytics.
     user.cvCount++;
