@@ -321,6 +321,10 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
   .cv-head{flex-direction:column-reverse;gap:12px}
   .cl-body-wrap{padding:32px 24px}
   .output-bar{flex-direction:column;align-items:flex-start}
+  /* Collapse nav on mobile — hide links + user name + plan badge */
+  .nav-links{display:none}
+  #nav-name{display:none !important}
+  #nav-plan-badge{display:none !important}
 }
 </style>
 </head>
@@ -329,7 +333,7 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
 <!-- NAV -->
 <nav>
   <div class="nav-logo">Resume<span>Forge</span></div>
-  <div style="display:flex;gap:20px;align-items:center">
+  <div class="nav-links" style="display:flex;gap:20px;align-items:center">
     <a onclick="scroll2('templates')" style="font-size:13px;color:var(--muted);cursor:pointer;text-decoration:none;white-space:nowrap">Templates</a>
     <a onclick="scroll2('pricing')"   style="font-size:13px;color:var(--muted);cursor:pointer;text-decoration:none;white-space:nowrap">Pricing</a>
   </div>
