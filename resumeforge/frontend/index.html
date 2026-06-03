@@ -1099,24 +1099,6 @@ ${styleHTML}
 
     const printAndCleanup = async () => {
       if (idoc.fonts && idoc.fonts.ready) { try { await idoc.fonts.ready; } catch {} }
-
-      // Auto-scale to fit one A4 page.
-      // A4 content area with 8mm margins = 297 - 16 = 281mm ≈ 1063px at 96dpi.
-      const A4_PX = 1063;
-      const cvEl  = idoc.getElementById('cv-wrap') || idoc.getElementById('cl-doc');
-      if (cvEl) {
-        const h = cvEl.scrollHeight;
-        if (h > A4_PX) {
-          const scale = A4_PX / h;
-          cvEl.style.transformOrigin = 'top left';
-          cvEl.style.transform = `scale(${scale})`;
-          // After scaling, the element's layout height is still the original —
-          // collapse the body to the scaled height so no blank second page appears.
-          idoc.body.style.height = Math.ceil(h * scale) + 'px';
-          idoc.body.style.overflow = 'hidden';
-        }
-      }
-
       iframe.contentWindow.focus();
       iframe.contentWindow.print();
       setTimeout(() => iframe.remove(), 1000);

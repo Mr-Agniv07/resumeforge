@@ -475,9 +475,12 @@ CRITICAL — DO NOT FABRICATE. The empty/example values in the JSON above are FO
 - You MAY rephrase/strengthen real items, write the summary and cover letter, and list skills clearly implied by the work. You may NOT add facts the candidate did not provide.
 
 Rules:
-- Bullets: punchy, quantified, real details only. Strong action verbs.
+- ONE PAGE TARGET: Write everything concisely so the full resume fits on a single A4 page when printed. Every word must earn its place.
+- Bullets: one line each, punchy and quantified. Lead with a strong action verb. Cut filler words ruthlessly — if a bullet can be shorter without losing meaning, shorten it.
+- Summary: 2 sentences max. Sharp and specific.
+- Don't pad — fewer strong points beat many weak ones. If a section has little to add, keep it brief.
 - CONTACT INFO IS NOT INVENTED. Use name/email/phone/location/linkedin/portfolio EXACTLY as given; empty stays "".
-- "extraSections": include a section ONLY if you can populate it from the candidate's text (suggested for ${prof.label}: ${prof.sections.length ? prof.sections.join(", ") : "none"}). If nothing qualifies, return "extraSections": [].`;
+- "extraSections": include a section ONLY if it genuinely adds value from the candidate's text (suggested for ${prof.label}: ${prof.sections.length ? prof.sections.join(", ") : "none"}). If nothing qualifies, return "extraSections": [].`;
 
   let text;
   try {
