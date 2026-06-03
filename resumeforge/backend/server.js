@@ -72,6 +72,16 @@ const paymentSchema = new mongoose.Schema({
 const User    = mongoose.model("User",    userSchema);
 const Payment = mongoose.model("Payment", paymentSchema);
 
+// Tracks anonymous (no-account) free CV usage by browser-generated UUID.
+const anonSessionSchema = new mongoose.Schema({
+  anonId:     { type: String, required: true, unique: true, index: true },
+  ip:         { type: String, default: "", index: true },
+  cvCount:    { type: Number, default: 0 },
+  createdAt:  { type: Date, default: Date.now },
+  lastUsedAt: { type: Date, default: Date.now },
+});
+const AnonSession = mongoose.model("AnonSession", anonSessionSchema);
+
 // ── Plan catalogue ────────────────────────────────────────────
 // amount = price in ₹ · credits = generations granted · lifetime = unlimited Pro
 const PLANS = {
@@ -172,6 +182,9 @@ async function refreshUser(user) {
 }
 
 const FREE_LIMIT = () => parseInt(process.env.FREE_MONTHLY_LIMIT) || 2;
+// Per-IP cap on anonymous free CVs — backstop against localStorage clearing.
+// Generous by default so shared networks (offices, colleges, mobile CGNAT) aren't blocked.
+const ANON_IP_LIMIT = () => parseInt(process.env.ANON_IP_LIMIT) || 6;
 
 // Free monthly allowance only applies to signed-in (Google) users.
 function freeRemaining(user) {
@@ -389,33 +402,69 @@ app.patch("/api/admin/users/:id/downgrade", requireAdmin, async (req, res) => {
 // ════════════════════════════════════════════════════════════
 //  CORE — POST /api/generate
 // ════════════════════════════════════════════════════════════
-app.post("/api/generate", requireAuth, async (req, res) => {
-  const { experience, role, company, name, email, phone, location, linkedin, portfolio, field } = req.body;
+app.post("/api/generate", async (req, res) => {
+  const { experience, role, company, name, email, phone, location, linkedin, portfolio, field, anonId } = req.body;
   const prof = PROFESSIONS[field] || PROFESSIONS.general;
 
   if (!experience || !role) return res.status(400).json({ error: "experience and role are required." });
   if (experience.length > 4000) return res.status(400).json({ error: "Experience text too long (max 4000 chars)." });
 
-  const user = await User.findById(req.user.userId);
-  if (!user) return res.status(404).json({ error: "User not found." });
+  // ── Quota check: authenticated user OR anonymous browser session ──────────
+  const tokenUser = readAuth(req);
+  let user = null, anonSession = null;
+  let isPro = false, useFree = false, useCredit = false;
 
-  await refreshUser(user);
+  if (tokenUser) {
+    // ── Signed-in path ───────────────────────────────────────────────────────
+    user = await User.findById(tokenUser.userId);
+    if (!user) return res.status(404).json({ error: "User not found." });
+    await refreshUser(user);
 
-  // Decide which allowance pays for this generation:
-  //   Pro      → unlimited
-  //   Free     → monthly allowance (signed-in users only), preserved before paid credits
-  //   Credits  → paid single / pack generations
-  const isPro     = user.plan === "pro";
-  const useFree   = !isPro && freeRemaining(user) > 0;
-  const useCredit = !isPro && !useFree && user.credits > 0;
+    isPro      = user.plan === "pro";
+    useFree    = !isPro && freeRemaining(user) > 0;
+    useCredit  = !isPro && !useFree && user.credits > 0;
 
-  if (!isPro && !useFree && !useCredit) {
-    return res.status(402).json({
-      error: user.signedIn
-        ? `You've used your ${FREE_LIMIT()} free CVs this month and have no credits left. Buy a pack or go Pro for unlimited!`
-        : "No credits left. Buy a single CV, a pack, or go Pro for unlimited!",
-      upgradeUrl: "#pricing",
-    });
+    if (!isPro && !useFree && !useCredit) {
+      return res.status(402).json({
+        error: `You've used your ${FREE_LIMIT()} free CVs this month and have no credits left. Buy a Starter pack or go Pro for unlimited!`,
+        upgradeUrl: "#pricing",
+      });
+    }
+  } else {
+    // ── Anonymous path — no account required ────────────────────────────────
+    if (!anonId || typeof anonId !== "string" || anonId.length > 64) {
+      return res.status(400).json({ error: "Session ID missing. Please refresh and try again." });
+    }
+
+    const ip = req.ip || "";
+
+    anonSession = await AnonSession.findOne({ anonId });
+    if (!anonSession) anonSession = await AnonSession.create({ anonId, ip });
+    if (ip && anonSession.ip !== ip) { anonSession.ip = ip; }  // keep latest IP
+
+    // Per-browser cap (primary): the localStorage anonId.
+    if (anonSession.cvCount >= FREE_LIMIT()) {
+      return res.status(402).json({
+        error: `You've used your ${FREE_LIMIT()} free CVs. Pay ₹15 for one more — no sign-in needed!`,
+        upgradeUrl: "#pricing",
+      });
+    }
+
+    // Per-IP backstop (secondary): catches users who clear localStorage to reset
+    // their browser quota. Set generously so shared networks aren't punished.
+    if (ip) {
+      const ipUsed = await AnonSession.aggregate([
+        { $match: { ip } },
+        { $group: { _id: null, total: { $sum: "$cvCount" } } },
+      ]);
+      const ipTotal = ipUsed[0]?.total || 0;
+      if (ipTotal >= ANON_IP_LIMIT()) {
+        return res.status(402).json({
+          error: "Free limit reached for your network. Sign in for monthly free CVs, or pay ₹15 for one.",
+          upgradeUrl: "#pricing",
+        });
+      }
+    }
   }
 
   const prompt = `You are an expert resume writer specializing in the ${prof.label} field. Create a complete professional resume for someone targeting "${role}"${company ? ` at ${company}` : ""}.
@@ -504,21 +553,34 @@ Rules:
     resume.linkedin  = (linkedin || "").trim();
     resume.portfolio = (portfolio|| "").trim();
 
-    // Charge the allowance chosen above. cvCount always increments for analytics.
-    user.cvCount++;
-    if (useCredit) user.credits = Math.max(0, user.credits - 1);
-    await user.save();
-
-    return res.json({
-      success: true,
-      resume,
-      usage: {
-        plan:      user.plan,
-        cvCount:   user.cvCount,
-        credits:   user.credits,
-        remaining: isPro ? null : freeRemaining(user) + user.credits,
-      },
-    });
+    if (user) {
+      // Signed-in: charge the chosen allowance
+      user.cvCount++;
+      if (useCredit) user.credits = Math.max(0, user.credits - 1);
+      await user.save();
+      return res.json({
+        success: true, resume,
+        usage: {
+          plan:      user.plan,
+          cvCount:   user.cvCount,
+          credits:   user.credits,
+          remaining: isPro ? null : freeRemaining(user) + user.credits,
+        },
+      });
+    } else {
+      // Anonymous: increment the session counter
+      anonSession.cvCount++;
+      anonSession.lastUsedAt = new Date();
+      await anonSession.save();
+      return res.json({
+        success: true, resume,
+        usage: {
+          plan:      "free",
+          cvCount:   anonSession.cvCount,
+          remaining: Math.max(0, FREE_LIMIT() - anonSession.cvCount),
+        },
+      });
+    }
   } catch (err) {
     console.error("AI error:", err.message, "\nRaw:", text);
     return res.status(502).json({ error: "AI generation failed. Please try again." });

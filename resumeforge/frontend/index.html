@@ -395,7 +395,7 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
 
   <!-- Login prompt (not logged in) -->
   <div class="login-prompt" id="login-prompt">
-    <p><strong>Sign in to generate your CV.</strong><br/>Get 2 free CVs per month with Google — or grab a single CV for ₹15 without signing in.</p>
+    <p><strong id="login-prompt-head">Start free — no sign-in needed.</strong><br/>Generate up to 2 CVs free right now. <span style="color:#bbb">Sign in with Google to get 2 free every month and save your work.</span></p>
     <div id="google-signin-btn"></div>
   </div>
 
@@ -861,6 +861,17 @@ let currentUser  = null;
 let currentField = "engineering";
 let currentTemplate = "modern";   // CV visual template (premium users can switch)
 
+// Persistent anonymous session ID — assigned once per browser, stored in localStorage.
+// Lets the backend track free usage without requiring an account.
+function getAnonId() {
+  let id = localStorage.getItem('rf_anon_id');
+  if (!id) {
+    id = (crypto.randomUUID ? crypto.randomUUID() : 'a-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+    localStorage.setItem('rf_anon_id', id);
+  }
+  return id;
+}
+
 // ── INIT ───────────────────────────────────────────────────
 // Animated count-up from 0 → target over ~1.5s
 function countUp(el, target) {
@@ -1049,8 +1060,8 @@ async function generate() {
   if (!exp || !role) { alert('Please fill in your Experience and Target Role.'); return; }
   currentField = document.getElementById('f-field').value;
 
+  // No sign-in required — anonymous users generate against their browser's free quota.
   const jwt = localStorage.getItem('rf_token');
-  if (!jwt) { openLoginModal(); return; }   // not signed in → offers free sign-in or ₹15 single CV
 
   const btn = document.getElementById('gen-btn');
   const err = document.getElementById('err');
@@ -1059,11 +1070,15 @@ async function generate() {
   btn.innerHTML = '<span class="spinner"></span>AI is writing your CV…';
 
   try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (jwt) headers['Authorization'] = `Bearer ${jwt}`;   // signed-in users send their token
+
     const res = await fetch(`${BACKEND}/api/generate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
+      headers,
       body: JSON.stringify({
         experience: exp, role, field: currentField,
+        anonId:    getAnonId(),   // browser session id for anonymous free tracking
         company:   document.getElementById('f-company').value.trim(),
         name:      document.getElementById('f-name').value.trim(),
         email:     document.getElementById('f-email').value.trim(),
@@ -1093,6 +1108,13 @@ async function generate() {
       currentUser.credits   = data.usage.credits;
       currentUser.remaining = data.usage.remaining;
       renderAuth(currentUser);
+    } else if (data.usage && !currentUser) {
+      // Anonymous user — reflect their remaining free count in the prompt
+      const left = data.usage.remaining ?? 0;
+      const head = document.getElementById('login-prompt-head');
+      if (head) head.textContent = left > 0
+        ? `${left} free CV${left === 1 ? '' : 's'} left — no sign-in needed.`
+        : `That was your last free CV.`;
     }
 
     updateTemplateAccess();   // show/hide template picker based on plan

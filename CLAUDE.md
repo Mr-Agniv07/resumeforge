@@ -59,7 +59,7 @@ Note: the root `.gitignore` ignores `README.md`, `node_modules/`, and `.env`.
 **Pricing model — credits + lifetime Pro (the `PLANS` catalogue in `server.js` is the source of truth):**
 - `single` ₹15 → +1 credit · `pack10` ₹59 → +10 credits · `pro` ₹499 → lifetime unlimited.
 - `User.credits` are paid one-off generations that never expire. `User.signedIn` is true only after Google auth. `User.premiumTemplates` (granted by `pack10`/`pro`, not `single`) unlocks the CV template picker; the frontend exposes it as `templates` in the user payload and toggles between `tpl-modern`/`tpl-classic`/`tpl-slate` classes on `#cv-wrap` (pure CSS, same DOM).
-- **Free monthly allowance (`FREE_MONTHLY_LIMIT`) applies only to signed-in users.** Anonymous purchasers get *zero* free CVs — only their credits.
+- **Two free-tier tracks:** (1) signed-in users get `FREE_MONTHLY_LIMIT` free CVs/month tracked on `User.cvCount`; (2) anonymous (no-account) visitors get the same limit tracked per-browser on the `AnonSession` model, keyed by a localStorage UUID (`rf_anon_id`, sent as `anonId`). A per-IP backstop (`ANON_IP_LIMIT`, default 6) on `AnonSession` limits localStorage-clearing abuse without blocking shared networks. Anonymous *purchasers* still get zero free beyond this — only their credits.
 
 **Payment flow — manual UPI verification (no gateway):**
 1. User pays out-of-band via UPI QR/ID, submits UTR via `POST /api/payment/submit` (creates a `pending` Payment; duplicate UTRs rejected). The route flags the payment `anonymous` when no valid JWT is sent.
