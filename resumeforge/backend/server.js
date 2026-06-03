@@ -182,9 +182,12 @@ async function refreshUser(user) {
 }
 
 const FREE_LIMIT = () => parseInt(process.env.FREE_MONTHLY_LIMIT) || 2;
-// Per-IP cap on anonymous free CVs — backstop against localStorage clearing.
-// Generous by default so shared networks (offices, colleges, mobile CGNAT) aren't blocked.
-const ANON_IP_LIMIT = () => parseInt(process.env.ANON_IP_LIMIT) || 6;
+// Per-IP cap on anonymous free CVs — backstop against incognito/localStorage abuse.
+// Defaults to FREE_LIMIT so the per-IP quota matches the per-browser quota exactly:
+// once a browser on this IP has used its free CVs, no other browser (incognito,
+// different profile, etc.) on the same IP gets additional free ones.
+// Override with ANON_IP_LIMIT env var if you serve shared networks (offices, colleges).
+const ANON_IP_LIMIT = () => parseInt(process.env.ANON_IP_LIMIT) || FREE_LIMIT();
 
 // Free monthly allowance only applies to signed-in (Google) users.
 function freeRemaining(user) {

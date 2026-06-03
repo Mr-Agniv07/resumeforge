@@ -37,7 +37,7 @@ To run against a local backend you must edit this to `http://localhost:3001` in 
 
 ## Configuration
 
-Backend config is entirely env-driven via `resumeforge/backend/.env` (copy from `.env.example`). Required keys: `ANTHROPIC_API_KEY`, `MONGO_URI`, `GOOGLE_CLIENT_ID`, `JWT_SECRET`, `ADMIN_SECRET`. Also `FRONTEND_URL` (CORS origin), `PORT` (default 3001), `FREE_MONTHLY_LIMIT` (default 2), `ANON_IP_LIMIT` (default 6, per-IP backstop against anonymous localStorage abuse). `MAIL_USER`/`MAIL_PASS`/`RESEND_API_KEY` exist in `.env` and `nodemailer`/`resend` are installed, but **email is not yet wired into `server.js`**.
+Backend config is entirely env-driven via `resumeforge/backend/.env` (copy from `.env.example`). Required keys: `ANTHROPIC_API_KEY`, `MONGO_URI`, `GOOGLE_CLIENT_ID`, `JWT_SECRET`, `ADMIN_SECRET`. Also `FRONTEND_URL` (CORS origin), `PORT` (default 3001), `FREE_MONTHLY_LIMIT` (default 2), `ANON_IP_LIMIT` (defaults to `FREE_MONTHLY_LIMIT`, per-IP backstop — set higher only if serving shared networks like offices/colleges). `MAIL_USER`/`MAIL_PASS`/`RESEND_API_KEY` exist in `.env` and `nodemailer`/`resend` are installed, but **email is not yet wired into `server.js`**.
 
 Note: the root `.gitignore` ignores `README.md`, `node_modules/`, and `.env`.
 
