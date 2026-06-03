@@ -81,6 +81,18 @@ input::placeholder,textarea::placeholder{color:#5a5550}
 input:focus,textarea:focus,select:focus{border-color:rgba(201,168,76,0.55)}
 select option{background:#1a1814;color:white}
 textarea{resize:vertical;min-height:110px;line-height:1.6}
+/* JD TAILORING */
+.jd-block{margin-bottom:20px;border:1px solid rgba(201,168,76,0.22);border-radius:10px;background:rgba(201,168,76,0.05);overflow:hidden}
+.jd-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;cursor:pointer;user-select:none}
+.jd-toggle-left{display:flex;align-items:center;gap:9px}
+.jd-toggle-title{font-size:14px;font-weight:600;color:#e8dcc0}
+.jd-toggle-sub{font-size:12px;color:#a89a7a}
+.jd-toggle-chev{font-size:12px;color:var(--gold);transition:transform .2s}
+.jd-block.open .jd-toggle-chev{transform:rotate(180deg)}
+.jd-body{display:none;padding:0 16px 16px}
+.jd-block.open .jd-body{display:block}
+.jd-body textarea{min-height:120px}
+.jd-tag{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gold);background:rgba(201,168,76,0.14);padding:2px 8px;border-radius:4px}
 .gen-btn{width:100%;background:var(--gold);color:var(--ink);border:none;padding:16px;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s;margin-top:6px}
 .gen-btn:hover{opacity:.9}
 .gen-btn:disabled{opacity:.5;cursor:not-allowed}
@@ -420,6 +432,26 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
       <div style="font-size:12px;color:#8a8378;margin-top:2px;line-height:1.5">
         Include your companies, roles, what you did, education, certifications and languages.
         We only put in what you write here — nothing is made up.
+      </div>
+    </div>
+  </div>
+
+  <!-- Optional: tailor the CV to a specific job posting -->
+  <div class="jd-block" id="jd-block">
+    <div class="jd-toggle" onclick="toggleJD()">
+      <div class="jd-toggle-left">
+        <span class="jd-tag">New</span>
+        <div>
+          <div class="jd-toggle-title">🎯 Tailor to a specific job</div>
+          <div class="jd-toggle-sub">Paste a job description and we'll optimize your CV to match it</div>
+        </div>
+      </div>
+      <span class="jd-toggle-chev">▼</span>
+    </div>
+    <div class="jd-body">
+      <textarea id="f-jd" rows="6" maxlength="6000" placeholder="Paste the full job description here — responsibilities, required skills, qualifications. We'll mirror its keywords and reframe your real experience to match, so your CV speaks directly to this role."></textarea>
+      <div style="font-size:12px;color:#8a8378;margin-top:4px;line-height:1.5">
+        Optional. Leave blank for a general-purpose CV. We never invent skills you don't have — we just surface and rephrase your real experience to fit the role.
       </div>
     </div>
   </div>
@@ -1009,12 +1041,18 @@ function openLoginModal() {
   document.getElementById('login-modal').style.display = 'flex';
 }
 
+// Expand/collapse the optional job-description field.
+function toggleJD() {
+  document.getElementById('jd-block').classList.toggle('open');
+}
+
 // ── GENERATE ───────────────────────────────────────────────
 async function generate() {
   const exp  = document.getElementById('f-exp').value.trim();
   const role = document.getElementById('f-role').value.trim();
   if (!exp || !role) { alert('Please fill in your Experience and Target Role.'); return; }
   currentField = document.getElementById('f-field').value;
+  const jd = document.getElementById('f-jd').value.trim();
 
   // No sign-in required — anonymous users generate against their browser's free quota.
   const jwt = localStorage.getItem('rf_token');
@@ -1034,6 +1072,7 @@ async function generate() {
       headers,
       body: JSON.stringify({
         experience: exp, role, field: currentField,
+        jobDescription: jd,       // optional — tailors the CV to this posting
         anonId:    getAnonId(),   // browser session id for anonymous free tracking
         company:   document.getElementById('f-company').value.trim(),
         name:      document.getElementById('f-name').value.trim(),

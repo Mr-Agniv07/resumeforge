@@ -416,11 +416,14 @@ app.patch("/api/admin/users/:id/downgrade", requireAdmin, async (req, res) => {
 //  CORE — POST /api/generate
 // ════════════════════════════════════════════════════════════
 app.post("/api/generate", async (req, res) => {
-  const { experience, role, company, name, email, phone, location, linkedin, portfolio, field, anonId } = req.body;
+  const { experience, role, company, name, email, phone, location, linkedin, portfolio, field, anonId, jobDescription } = req.body;
   const prof = PROFESSIONS[field] || PROFESSIONS.general;
 
   if (!experience || !role) return res.status(400).json({ error: "experience and role are required." });
   if (experience.length > 4000) return res.status(400).json({ error: "Experience text too long (max 4000 chars)." });
+
+  // Optional job description to tailor the resume against (truncated for safety).
+  const jd = typeof jobDescription === "string" ? jobDescription.trim().slice(0, 6000) : "";
 
   // ── Quota check: authenticated user OR anonymous browser session ──────────
   const tokenUser = readAuth(req);
@@ -480,13 +483,29 @@ app.post("/api/generate", async (req, res) => {
     }
   }
 
+  // When a job description is supplied, instruct the model to tailor the resume to it.
+  const jdBlock = jd ? `
+
+TARGET JOB DESCRIPTION — tailor the resume specifically to THIS posting:
+"""
+${jd}
+"""
+HOW TO TAILOR (without fabricating):
+- Identify the hard skills, tools, responsibilities, and keywords the JD asks for.
+- Use the JD's EXACT terminology where the candidate genuinely has that experience (e.g. if the JD says "React.js", write "React.js" not "React"; match "REST APIs", "CI/CD", etc. verbatim).
+- Reorder and rephrase the candidate's REAL experience so the work most relevant to this JD appears first and is described in the JD's language.
+- In "skills.technical", list the candidate's real skills that overlap the JD first.
+- Write the summary and cover letter to speak directly to this role and its priorities.
+- CRITICAL: never add a skill, tool, or responsibility the candidate did not actually demonstrate, even if the JD requires it. Tailoring means reframing real experience — never inventing it.
+` : "";
+
   const prompt = `You are an expert resume writer specializing in the ${prof.label} field. Create a complete professional resume for someone targeting "${role}"${company ? ` at ${company}` : ""}.
 
 FIELD FOCUS — ${prof.label}: ${prof.guidance}
 
 Candidate: ${name||"Candidate"} | ${email||""} | ${phone||""} | ${location||""}
 Experience: ${experience}
-
+${jdBlock}
 Return ONLY raw JSON (no markdown, no backticks, no explanation):
 {
   "name": "${name||"Candidate"}",
