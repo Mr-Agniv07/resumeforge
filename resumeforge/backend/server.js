@@ -224,10 +224,10 @@ function readAuth(req) {
 // ════════════════════════════════════════════════════════════
 
 // POST /api/auth/google
-// Body: { credential } — the Google ID token from the frontend
+// Body: { credential, anonId? } — the Google ID token + optional browser session ID
 app.post("/api/auth/google", async (req, res) => {
   try {
-    const { credential } = req.body;
+    const { credential, anonId } = req.body;
     if (!credential) return res.status(400).json({ error: "Google credential missing." });
 
     // Verify the Google token
@@ -248,6 +248,16 @@ app.post("/api/auth/google", async (req, res) => {
       user.name     = name || user.name;
       user.picture  = picture || user.picture;
       user.signedIn = true;
+    }
+
+    // Carry over anonymous usage so signing in doesn't grant extra free CVs.
+    // If this browser already used N CVs anonymously, the signed-in quota starts
+    // at max(current cvCount, anonSession cvCount) — never lets them reset to 0.
+    if (anonId && typeof anonId === "string" && anonId.length <= 64) {
+      const anonSession = await AnonSession.findOne({ anonId });
+      if (anonSession && anonSession.cvCount > user.cvCount) {
+        user.cvCount = anonSession.cvCount;
+      }
     }
 
     await refreshUser(user);

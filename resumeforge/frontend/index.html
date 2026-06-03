@@ -908,7 +908,7 @@ async function handleGoogleSignIn(response) {
     const res  = await fetch(`${BACKEND}/api/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ credential: response.credential })
+      body: JSON.stringify({ credential: response.credential, anonId: getAnonId() })
     });
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || 'Login failed');
