@@ -58,7 +58,7 @@ Note: the root `.gitignore` ignores `README.md`, `node_modules/`, and `.env`.
 
 **Pricing model — credits + lifetime Pro (the `PLANS` catalogue in `server.js` is the source of truth):**
 - `single` ₹15 → +1 credit · `pack10` ₹59 → +10 credits · `pro` ₹499 → lifetime unlimited.
-- `User.credits` are paid one-off generations that never expire. `User.signedIn` is true only after Google auth.
+- `User.credits` are paid one-off generations that never expire. `User.signedIn` is true only after Google auth. `User.premiumTemplates` (granted by `pack10`/`pro`, not `single`) unlocks the CV template picker; the frontend exposes it as `templates` in the user payload and toggles between `tpl-modern`/`tpl-classic`/`tpl-slate` classes on `#cv-wrap` (pure CSS, same DOM).
 - **Free monthly allowance (`FREE_MONTHLY_LIMIT`) applies only to signed-in users.** Anonymous purchasers get *zero* free CVs — only their credits.
 
 **Payment flow — manual UPI verification (no gateway):**

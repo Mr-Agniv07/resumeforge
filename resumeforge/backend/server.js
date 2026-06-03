@@ -49,6 +49,7 @@ const userSchema = new mongoose.Schema({
   proUntil:     { type: Date, default: null },   // null + plan "pro" = lifetime (never expires)
   credits:      { type: Number, default: 0 },     // paid one-off generations (single / packs)
   signedIn:     { type: Boolean, default: false },// true once they authenticate via Google
+  premiumTemplates: { type: Boolean, default: false }, // unlocked by pack10 / pro (not single)
   cvCount:      { type: Number, default: 0 },
   countResetAt: { type: Date, default: () => nextMonthReset() },
   createdAt:    { type: Date, default: Date.now },
@@ -74,9 +75,9 @@ const Payment = mongoose.model("Payment", paymentSchema);
 // ── Plan catalogue ────────────────────────────────────────────
 // amount = price in ₹ · credits = generations granted · lifetime = unlimited Pro
 const PLANS = {
-  single: { amount: 15,  credits: 1,  lifetime: false, label: "Single CV"       },
-  pack10: { amount: 59,  credits: 10, lifetime: false, label: "10 CV Pack"       },
-  pro:    { amount: 499, credits: 0,  lifetime: true,  label: "Pro (Lifetime)"   },
+  single: { amount: 15,  credits: 1,  lifetime: false, templates: false, label: "Single CV"     },
+  pack10: { amount: 59,  credits: 10, lifetime: false, templates: true,  label: "10 CV Pack"     },
+  pro:    { amount: 499, credits: 0,  lifetime: true,  templates: true,  label: "Pro (Lifetime)" },
 };
 
 // ── Profession-specific resume tailoring ──────────────────────
@@ -189,6 +190,7 @@ function userPayload(user) {
     isPro,
     credits:   user.credits,
     signedIn:  user.signedIn,
+    templates: isPro || user.premiumTemplates,   // eligible for premium templates
     cvCount:   user.cvCount,
     cvLimit:   isPro ? null : (user.signedIn ? FREE_LIMIT() : 0),
     remaining: isPro ? null : freeRemaining(user) + user.credits,
@@ -355,6 +357,7 @@ app.patch("/api/admin/payments/:id/approve", requireAdmin, async (req, res) => {
     user.credits += cfg.credits;          // single / packs add generation credits
     summary = `${payment.email} credited +${cfg.credits} (total ${user.credits}).`;
   }
+  if (cfg.templates) user.premiumTemplates = true;  // pack10 / pro unlock template choices
   await user.save();
 
   console.log(`✅ Approved: ${summary}`);

@@ -150,6 +150,36 @@ textarea{resize:vertical;min-height:110px;line-height:1.6}
 .cv-lang-item{font-size:12px;color:#333}
 .cv-foot{height:4px;background:linear-gradient(90deg,#c9a84c,#3d5a47,#1a1a1a)}
 
+/* TEMPLATE PICKER */
+.tpl-picker{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tpl-picker-label{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#8a8378;margin-right:2px}
+.tpl-chip{background:#fff;border:1px solid var(--border);color:var(--ink);padding:7px 16px;border-radius:20px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.tpl-chip:hover{border-color:var(--ink)}
+.tpl-chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* TEMPLATE: Classic — single column, traditional black/white, ATS-clean */
+#cv-wrap.tpl-classic .cv-accent,#cv-wrap.tpl-classic .cv-foot,#cv-wrap.tpl-classic .cv-initials{display:none}
+#cv-wrap.tpl-classic .cv-head{padding:34px 48px 22px;border-bottom:2px solid #1a1a1a}
+#cv-wrap.tpl-classic .cv-name{color:#1a1a1a}
+#cv-wrap.tpl-classic .cv-title-line{color:#444}
+#cv-wrap.tpl-classic .cv-body{display:block}
+#cv-wrap.tpl-classic .cv-main{border-right:none;padding:24px 48px 8px}
+#cv-wrap.tpl-classic .cv-side{background:#fff;padding:4px 48px 30px}
+#cv-wrap.tpl-classic .cv-sec-head{color:#1a1a1a;border-bottom-color:#1a1a1a}
+#cv-wrap.tpl-classic .cv-exp-co,#cv-wrap.tpl-classic .cv-edu-inst{color:#1a1a1a}
+#cv-wrap.tpl-classic .cv-bullets li::before,#cv-wrap.tpl-classic .cv-cert-list li::before{color:#1a1a1a}
+#cv-wrap.tpl-classic .cv-skill-tag{background:#f4f4f2;border-color:#ddd;color:#222}
+#cv-wrap.tpl-classic .cv-proj-tech span{background:#f0f0ee;color:#333}
+
+/* TEMPLATE: Slate — bold dark header band, gold accents */
+#cv-wrap.tpl-slate .cv-accent{display:none}
+#cv-wrap.tpl-slate .cv-head{background:#14171c;color:#fff;border-bottom:none;padding:34px 44px 30px}
+#cv-wrap.tpl-slate .cv-name{color:#fff}
+#cv-wrap.tpl-slate .cv-title-line{color:#c9a84c}
+#cv-wrap.tpl-slate .cv-contact-item{color:#cfcabf;border-color:#3a3f47}
+#cv-wrap.tpl-slate .cv-initials{background:#c9a84c;color:#14171c}
+#cv-wrap.tpl-slate .cv-sec-head{color:#14171c;border-bottom-color:#c9a84c}
+
 /* COVER LETTER */
 #cl-doc{max-width:800px;margin:0 auto;background:white;box-shadow:0 6px 48px rgba(0,0,0,0.16);display:none}
 .cl-accent{height:6px;background:linear-gradient(90deg,#1a1a1a 0%,#3d5a47 50%,#c9a84c 100%)}
@@ -343,7 +373,14 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
     <button class="tab active" onclick="showTab('cv',this)">📄 CV / Resume</button>
     <button class="tab" onclick="showTab('cl',this)">✉ Cover Letter</button>
   </div>
-  <div id="cv-wrap">
+  <!-- Template picker — only shown to pack/Pro users -->
+  <div class="tpl-picker" id="tpl-picker" style="display:none">
+    <span class="tpl-picker-label">Template</span>
+    <button class="tpl-chip active" data-tpl="modern"  onclick="setTemplate('modern',this)">Modern</button>
+    <button class="tpl-chip"        data-tpl="classic" onclick="setTemplate('classic',this)">Classic</button>
+    <button class="tpl-chip"        data-tpl="slate"   onclick="setTemplate('slate',this)">Slate</button>
+  </div>
+  <div id="cv-wrap" class="tpl-modern">
     <div class="cv-accent"></div>
     <div class="cv-head" id="cv-head"></div>
     <div class="cv-body">
@@ -372,18 +409,18 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
     </div>
     <div class="plan-card">
       <div class="plan-name">Single CV</div><div class="plan-price">₹15</div><div class="plan-period">one-time · no sign-in</div>
-      <ul class="plan-feats"><li>1 CV + cover letter</li><li>No account needed</li><li>Full premium quality</li><li>PDF + text export</li></ul>
+      <ul class="plan-feats"><li>1 CV + cover letter</li><li>No account needed</li><li>Standard template</li><li>PDF + text export</li></ul>
       <button class="plan-btn" onclick="pay('single')">Buy 1 CV →</button>
     </div>
     <div class="plan-card featured">
       <div class="plan-badge">Best value</div>
       <div class="plan-name">10 CV Pack</div><div class="plan-price">₹59</div><div class="plan-period">10 CVs · credits never expire</div>
-      <ul class="plan-feats"><li>10 CVs &amp; cover letters</li><li>Just ₹5.9 per CV</li><li>Credits never expire</li><li>PDF + text export</li></ul>
+      <ul class="plan-feats"><li>10 CVs &amp; cover letters</li><li>Just ₹5.9 per CV</li><li>Premium templates unlocked</li><li>Credits never expire</li></ul>
       <button class="plan-btn" onclick="pay('pack10')">Get 10 Pack →</button>
     </div>
     <div class="plan-card">
       <div class="plan-name">Pro · Lifetime</div><div class="plan-price">₹499</div><div class="plan-period">one-time · forever</div>
-      <ul class="plan-feats"><li>Unlimited CVs forever</li><li>LinkedIn rewrite</li><li>No monthly fees, ever</li><li>Priority speed</li></ul>
+      <ul class="plan-feats"><li>Unlimited CVs forever</li><li>All premium templates</li><li>LinkedIn rewrite</li><li>No monthly fees, ever</li></ul>
       <button class="plan-btn" onclick="pay('pro')">Get Lifetime Pro →</button>
     </div>
   </div>
@@ -493,10 +530,11 @@ function applyFieldHints() {
   document.getElementById('f-exp').placeholder  = p.exp;
 }
 
-let R           = null;
-let activeTab   = "cv";
-let currentUser = null;
+let R            = null;
+let activeTab    = "cv";
+let currentUser  = null;
 let currentField = "engineering";
+let currentTemplate = "modern";   // CV visual template (premium users can switch)
 
 // ── INIT ───────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
@@ -700,6 +738,8 @@ async function generate() {
       renderAuth(currentUser);
     }
 
+    updateTemplateAccess();   // show/hide template picker based on plan
+
     const out = document.getElementById('output-section');
     out.style.display = 'block';
     setTimeout(() => out.scrollIntoView({ behavior: 'smooth' }), 100);
@@ -854,6 +894,22 @@ const ICONS = {
 
 function getInitials(name) {
   return (name||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+}
+
+// Switch CV template — pure class swap on #cv-wrap (same DOM, instant, flows to PDF).
+function setTemplate(t, el) {
+  currentTemplate = t;
+  const wrap = document.getElementById('cv-wrap');
+  if (wrap) wrap.className = 'tpl-' + t;
+  document.querySelectorAll('.tpl-chip').forEach(c => c.classList.toggle('active', c.dataset.tpl === t));
+}
+
+// Show the template picker only for pack/Pro users; everyone else stays on Modern.
+function updateTemplateAccess() {
+  const can = !!(currentUser && (currentUser.isPro || currentUser.templates));
+  const picker = document.getElementById('tpl-picker');
+  if (picker) picker.style.display = can ? 'flex' : 'none';
+  if (!can) setTemplate('modern');
 }
 
 function renderCV(r) {
