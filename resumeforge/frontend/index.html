@@ -708,7 +708,7 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
       <div style="padding:16px 18px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <span style="font-size:15px;font-weight:700;color:var(--ink)">Slate</span>
-          <span style="background:var(--ink);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;letter-spacing:.5px">₹59 PACK</span>
+          <span style="background:var(--ink);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;letter-spacing:.5px">STARTER / PRO</span>
         </div>
         <p style="font-size:13px;color:var(--muted);line-height:1.5">Bold dark header with gold accents. Striking and modern.</p>
       </div>
@@ -860,8 +860,7 @@ let currentTemplate = "modern";   // CV visual template (premium users can switc
 
 // ── INIT ───────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
-  applyFieldHints();        // profession-aware placeholders for the default field
-  updateTemplateAccess();   // set lock state before user logs in
+  applyFieldHints();   // profession-aware placeholders for the default field
 
   // Initialize Google Sign-In buttons
   if (window.google) initGoogle();
@@ -945,6 +944,7 @@ function renderAuth(user) {
     authBar.style.display     = 'none';
     navUser.style.display     = 'none';
     navLoginBtn.style.display = 'block';
+    updateTemplateAccess();   // reset to locked state on logout
     return;
   }
 
@@ -995,6 +995,8 @@ function renderAuth(user) {
   const badge = document.getElementById('nav-plan-badge');
   badge.textContent  = isPro ? 'PRO' : 'FREE';
   badge.className    = `nav-plan-badge ${isPro?'pro':'free'}`;
+
+  updateTemplateAccess(); // unlock/lock templates based on the now-known user plan
 }
 
 function logout() {
