@@ -368,6 +368,9 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
       <button class="btn-dark" onclick="scroll2('builder')">Build my resume — free ↓</button>
       <button class="btn-outline" onclick="scroll2('pricing')">See pricing</button>
     </div>
+    <div id="cv-counter" style="margin-top:22px;font-size:13px;color:rgba(255,255,255,0.45);display:none">
+      ✦ <span id="cv-counter-num" style="font-weight:700;color:var(--gold);font-size:15px">0</span> CVs generated and counting
+    </div>
   </div>
 </section>
 
@@ -859,8 +862,35 @@ let currentField = "engineering";
 let currentTemplate = "modern";   // CV visual template (premium users can switch)
 
 // ── INIT ───────────────────────────────────────────────────
+// Animated count-up from 0 → target over ~1.5s
+function countUp(el, target) {
+  if (!target || target < 1) return;
+  const duration = 1500;
+  const steps    = 40;
+  const interval = duration / steps;
+  let current    = 0;
+  const increment = target / steps;
+  const timer = setInterval(() => {
+    current += increment;
+    if (current >= target) { current = target; clearInterval(timer); }
+    el.textContent = Math.floor(current).toLocaleString('en-IN');
+  }, interval);
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
   applyFieldHints();   // profession-aware placeholders for the default field
+
+  // Fetch and display live CV counter
+  try {
+    const res  = await fetch(`${BACKEND}/api/stats`);
+    const data = await res.json();
+    if (data.totalCVs > 0) {
+      const wrap = document.getElementById('cv-counter');
+      const num  = document.getElementById('cv-counter-num');
+      wrap.style.display = 'block';
+      countUp(num, data.totalCVs);
+    }
+  } catch {}   // fail silently — counter is cosmetic
 
   // Initialize Google Sign-In buttons
   if (window.google) initGoogle();

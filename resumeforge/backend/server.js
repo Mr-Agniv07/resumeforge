@@ -549,5 +549,17 @@ app.post("/api/linkedin", requireAuth, async (req, res) => {
 // Health check
 app.get("/api/health", (_, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 
+// Public stats — total CVs generated across all users (live counter on landing page)
+let statsCache = { total: 0, cachedAt: 0 };
+app.get("/api/stats", async (_, res) => {
+  // Cache for 60 seconds to avoid hammering the DB on every page load
+  if (Date.now() - statsCache.cachedAt < 60_000) {
+    return res.json({ totalCVs: statsCache.total });
+  }
+  const result = await User.aggregate([{ $group: { _id: null, total: { $sum: "$cvCount" } } }]);
+  statsCache = { total: result[0]?.total || 0, cachedAt: Date.now() };
+  res.json({ totalCVs: statsCache.total });
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`✅ ResumeForge backend running on port ${PORT}`));
