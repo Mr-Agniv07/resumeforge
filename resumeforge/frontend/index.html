@@ -150,6 +150,18 @@ textarea{resize:vertical;min-height:110px;line-height:1.6}
 .cv-lang-item{font-size:12px;color:#333}
 .cv-foot{height:4px;background:linear-gradient(90deg,#c9a84c,#3d5a47,#1a1a1a)}
 
+/* BUILDER template selector (dark bg) */
+.builder-tpl-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+.builder-tpl-card{position:relative;border:2px solid rgba(255,255,255,0.12);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s,box-shadow .15s;background:rgba(255,255,255,0.04);flex-shrink:0;width:110px}
+.builder-tpl-card:hover{border-color:rgba(255,255,255,0.35)}
+.builder-tpl-card.active{border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,168,76,0.25)}
+.builder-tpl-card.locked{cursor:default;opacity:.7}
+.builder-tpl-card.locked:hover{border-color:rgba(201,168,76,0.5)}
+.builder-tpl-name{font-size:11px;font-weight:600;text-align:center;padding:5px 0 6px;color:rgba(255,255,255,0.8);letter-spacing:.5px}
+.builder-tpl-lock{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:rgba(10,9,8,0.55);backdrop-filter:blur(1px)}
+.builder-tpl-lock-icon{font-size:14px}
+.builder-tpl-lock-label{font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--gold);text-transform:uppercase}
+
 /* TEMPLATE PICKER */
 .tpl-picker{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px}
 .tpl-picker-label{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#8a8378;margin-right:2px;white-space:nowrap}
@@ -417,6 +429,42 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
     </div>
   </div>
 
+  <!-- Template selector in builder — select style before generating -->
+  <div style="margin-bottom:18px">
+    <label style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:10px">Choose your CV template</label>
+    <div class="builder-tpl-row" id="builder-tpl-row">
+
+      <div class="builder-tpl-card active" id="btpl-card-modern" onclick="setTemplate('modern')">
+        <div class="tpl-mini tpl-mini-modern" style="width:106px;height:130px">
+          <div class="tm-accent"></div>
+          <div class="tm-head"><div><div class="tm-name"></div><div class="tm-title"></div><div class="tm-contacts"><div class="tm-c"></div><div class="tm-c"></div></div></div><div class="tm-avatar"></div></div>
+          <div class="tm-body"><div class="tm-main"><div class="tm-sh"></div><div class="tm-line w90"></div><div class="tm-line w70"></div><div class="tm-sh"></div><div class="tm-line w50"></div><div class="tm-bullet w80"></div><div class="tm-bullet w65"></div></div><div class="tm-side"><div class="tm-sh"></div><div class="tm-line w90"></div><div class="tm-sh"></div><div class="tm-tag"></div><div class="tm-tag"></div><div class="tm-tag"></div></div></div>
+          <div class="tm-foot"></div>
+        </div>
+        <div class="builder-tpl-name">Modern</div>
+      </div>
+
+      <div class="builder-tpl-card locked" id="btpl-card-classic" onclick="onPremiumTplClick()">
+        <div class="tpl-mini tpl-mini-classic" style="width:106px;height:130px">
+          <div class="tc-head"><div class="tc-name"></div><div class="tc-title"></div><div class="tc-contacts"><div class="tc-cc"></div><div class="tc-cc"></div></div></div>
+          <div class="tc-body"><div class="tc-sh"></div><div class="tc-line w90"></div><div class="tc-line w70"></div><div class="tc-sh"></div><div class="tc-line w50"></div><div class="tc-bullet" style="width:85%"></div><div class="tc-bullet" style="width:70%"></div><div class="tc-sh"></div><div class="tc-tag"></div><div class="tc-tag"></div><div class="tc-tag"></div></div>
+        </div>
+        <div class="builder-tpl-lock" id="btpl-lock-classic"><div class="builder-tpl-lock-icon">🔒</div><div class="builder-tpl-lock-label">Starter / Pro</div></div>
+        <div class="builder-tpl-name">Classic</div>
+      </div>
+
+      <div class="builder-tpl-card locked" id="btpl-card-slate" onclick="onPremiumTplClick()">
+        <div class="tpl-mini tpl-mini-slate" style="width:106px;height:130px">
+          <div class="ts-head"><div class="ts-name"></div><div class="ts-title"></div><div class="ts-contacts"><div class="ts-cc"></div><div class="ts-cc"></div></div></div>
+          <div class="ts-body"><div class="ts-main"><div class="ts-sh"></div><div class="ts-line w90"></div><div class="ts-line w70"></div><div class="ts-sh"></div><div class="ts-line w50"></div><div class="ts-bullet" style="width:80%"></div><div class="ts-bullet" style="width:65%"></div></div><div class="ts-side"><div class="ts-sh"></div><div class="ts-line w90"></div><div class="ts-sh"></div><div class="ts-tag"></div><div class="ts-tag"></div></div></div>
+        </div>
+        <div class="builder-tpl-lock" id="btpl-lock-slate"><div class="builder-tpl-lock-icon">🔒</div><div class="builder-tpl-lock-label">Starter / Pro</div></div>
+        <div class="builder-tpl-name">Slate</div>
+      </div>
+
+    </div>
+  </div>
+
   <button class="gen-btn" id="gen-btn" onclick="generate()">✦ Generate My Professional CV</button>
   <div class="error-box" id="err"></div>
 </section>
@@ -622,7 +670,7 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
       <div style="padding:16px 18px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <span style="font-size:15px;font-weight:700;color:var(--ink)">Classic</span>
-          <span style="background:var(--gold);color:var(--ink);font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;letter-spacing:.5px">₹59 PACK</span>
+          <span style="background:var(--gold);color:var(--ink);font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;letter-spacing:.5px">STARTER / PRO</span>
         </div>
         <p style="font-size:13px;color:var(--muted);line-height:1.5">Single-column, ATS-friendly. Traditional and clean.</p>
       </div>
@@ -667,7 +715,7 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
     </div>
 
   </div>
-  <p style="margin-top:28px;font-size:13px;color:var(--muted)">Unlock Classic &amp; Slate with the <a onclick="scroll2('pricing')" style="color:var(--gold);cursor:pointer;font-weight:600">10 CV Pack or Pro →</a></p>
+  <p style="margin-top:28px;font-size:13px;color:var(--muted)">Unlock Classic &amp; Slate with <a onclick="scroll2('pricing')" style="color:var(--gold);cursor:pointer;font-weight:600">Starter or Pro →</a></p>
 </section>
 
 <!-- PRICING -->
@@ -688,13 +736,13 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
     </div>
     <div class="plan-card featured">
       <div class="plan-badge">Best value</div>
-      <div class="plan-name">10 CV Pack</div><div class="plan-price">₹59</div><div class="plan-period">10 CVs · credits never expire</div>
-      <ul class="plan-feats"><li>10 CVs &amp; cover letters</li><li>Just ₹5.9 per CV</li><li>Premium templates unlocked</li><li>Credits never expire</li></ul>
-      <button class="plan-btn" onclick="pay('pack10')">Get 10 Pack →</button>
+      <div class="plan-name">Starter</div><div class="plan-price">₹59</div><div class="plan-period">10 CVs · credits never expire</div>
+      <ul class="plan-feats"><li>10 CVs &amp; cover letters</li><li>Just ₹5.9 per CV</li><li>Classic &amp; Slate templates</li><li>Credits never expire</li></ul>
+      <button class="plan-btn" onclick="pay('pack10')">Get Starter →</button>
     </div>
     <div class="plan-card">
       <div class="plan-name">Pro · Lifetime</div><div class="plan-price">₹499</div><div class="plan-period">one-time · forever</div>
-      <ul class="plan-feats"><li>Unlimited CVs forever</li><li>All premium templates</li><li>LinkedIn rewrite</li><li>No monthly fees, ever</li></ul>
+      <ul class="plan-feats"><li>Unlimited CVs forever</li><li>Classic &amp; Slate templates</li><li>LinkedIn rewrite</li><li>No monthly fees, ever</li></ul>
       <button class="plan-btn" onclick="pay('pro')">Get Lifetime Pro →</button>
     </div>
   </div>
@@ -767,7 +815,7 @@ const UPI_NAME   = "ResumeForge";
 // Paid plans — must mirror the backend PLANS catalogue.
 const PLANS = {
   single: { amount: 15,  desc: "Single CV — 1 generation"        },
-  pack10: { amount: 59,  desc: "10 CV Pack — 10 generations"     },
+  pack10: { amount: 59,  desc: "Starter — 10 generations"         },
   pro:    { amount: 499, desc: "Pro — lifetime unlimited access" },
 };
 
@@ -1172,36 +1220,43 @@ function getInitials(name) {
 }
 
 // Switch CV template — pure class swap on #cv-wrap, instant, flows to PDF.
+// Works from both the builder selector and the output picker.
 function setTemplate(t) {
   const can = !!(currentUser && (currentUser.isPro || currentUser.templates));
   if (t !== 'modern' && !can) { scroll2('pricing'); return; }
   currentTemplate = t;
   const wrap = document.getElementById('cv-wrap');
   if (wrap) wrap.className = 'tpl-' + t;
+  // Sync output picker cards
   document.querySelectorAll('.tpl-card').forEach(c => c.classList.toggle('active', c.id === 'tpl-card-' + t));
+  // Sync builder cards
+  document.querySelectorAll('.builder-tpl-card').forEach(c => c.classList.toggle('active', c.id === 'btpl-card-' + t));
 }
 
 // Called when a locked template card is clicked by a non-premium user.
 function onPremiumTplClick() { scroll2('pricing'); }
 
-// Remove locks for pack/Pro users; keep them for free/single.
+// Remove locks for Starter/Pro users; keep them for free/single.
+// Runs on login, after generation, and on page load.
 function updateTemplateAccess() {
   const can = !!(currentUser && (currentUser.isPro || currentUser.templates));
   ['classic','slate'].forEach(t => {
-    const card = document.getElementById('tpl-card-' + t);
-    const lock = document.getElementById('tpl-lock-' + t);
-    if (!card || !lock) return;
+    // Output picker card
+    const card  = document.getElementById('tpl-card-' + t);
+    const lock  = document.getElementById('tpl-lock-' + t);
+    // Builder card
+    const bcard = document.getElementById('btpl-card-' + t);
+    const block = document.getElementById('btpl-lock-' + t);
+
     if (can) {
-      card.classList.remove('locked');
-      card.onclick = () => setTemplate(t);
-      lock.style.display = 'none';
+      [card,  bcard ].forEach(el => { if(el){ el.classList.remove('locked'); el.onclick = ()=>setTemplate(t); }});
+      [lock,  block ].forEach(el => { if(el) el.style.display = 'none'; });
     } else {
-      card.classList.add('locked');
-      card.onclick = onPremiumTplClick;
-      lock.style.display = 'flex';
+      [card,  bcard ].forEach(el => { if(el){ el.classList.add('locked'); el.onclick = onPremiumTplClick; }});
+      [lock,  block ].forEach(el => { if(el) el.style.display = 'flex'; });
     }
   });
-  if (!can) setTemplate('modern');
+  if (!can && currentTemplate !== 'modern') setTemplate('modern');
 }
 
 

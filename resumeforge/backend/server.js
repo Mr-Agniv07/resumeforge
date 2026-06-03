@@ -76,7 +76,7 @@ const Payment = mongoose.model("Payment", paymentSchema);
 // amount = price in ₹ · credits = generations granted · lifetime = unlimited Pro
 const PLANS = {
   single: { amount: 15,  credits: 1,  lifetime: false, templates: false, label: "Single CV"     },
-  pack10: { amount: 59,  credits: 10, lifetime: false, templates: true,  label: "10 CV Pack"     },
+  pack10: { amount: 59,  credits: 10, lifetime: false, templates: true,  label: "Starter"        },
   pro:    { amount: 499, credits: 0,  lifetime: true,  templates: true,  label: "Pro (Lifetime)" },
 };
 

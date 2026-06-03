@@ -409,7 +409,7 @@ function renderUsersTable(users){
 // Plan badge styling + label for the payments table.
 function planClass(plan){ return plan==='pro' ? 'plan-pro' : (plan==='free' ? 'plan-free' : 'plan-credit'); }
 function planLabel(plan){
-  return { single:'single · ₹15', pack10:'10-pack', pro:'pro · lifetime' }[plan] || plan;
+  return { single:'single · ₹15', pack10:'starter · ₹59', pro:'pro · lifetime' }[plan] || plan;
 }
 
 async function downgrade(id, email){
