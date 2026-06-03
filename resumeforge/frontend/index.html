@@ -670,7 +670,7 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
       <div style="padding:16px 18px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <span style="font-size:15px;font-weight:700;color:var(--ink)">Classic</span>
-          <span style="background:var(--gold);color:var(--ink);font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;letter-spacing:.5px">STARTER / PRO</span>
+          <span id="showcase-badge-classic" style="background:var(--gold);color:var(--ink);font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;letter-spacing:.5px">STARTER / PRO</span>
         </div>
         <p style="font-size:13px;color:var(--muted);line-height:1.5">Single-column, ATS-friendly. Traditional and clean.</p>
       </div>
@@ -708,14 +708,14 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
       <div style="padding:16px 18px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <span style="font-size:15px;font-weight:700;color:var(--ink)">Slate</span>
-          <span style="background:var(--ink);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;letter-spacing:.5px">STARTER / PRO</span>
+          <span id="showcase-badge-slate" style="background:var(--ink);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;letter-spacing:.5px">STARTER / PRO</span>
         </div>
         <p style="font-size:13px;color:var(--muted);line-height:1.5">Bold dark header with gold accents. Striking and modern.</p>
       </div>
     </div>
 
   </div>
-  <p style="margin-top:28px;font-size:13px;color:var(--muted)">Unlock Classic &amp; Slate with <a onclick="scroll2('pricing')" style="color:var(--gold);cursor:pointer;font-weight:600">Starter or Pro →</a></p>
+  <p id="showcase-cta" style="margin-top:28px;font-size:13px;color:var(--muted)">Unlock Classic &amp; Slate with <a onclick="scroll2('pricing')" style="color:var(--gold);cursor:pointer;font-weight:600">Starter or Pro →</a></p>
 </section>
 
 <!-- PRICING -->
@@ -944,7 +944,8 @@ function renderAuth(user) {
     authBar.style.display     = 'none';
     navUser.style.display     = 'none';
     navLoginBtn.style.display = 'block';
-    updateTemplateAccess();   // reset to locked state on logout
+    updateTemplateAccess();
+    updateShowcase();
     return;
   }
 
@@ -997,6 +998,7 @@ function renderAuth(user) {
   badge.className    = `nav-plan-badge ${isPro?'pro':'free'}`;
 
   updateTemplateAccess(); // unlock/lock templates based on the now-known user plan
+  updateShowcase();       // update landing page template badges
 }
 
 function logout() {
@@ -1219,6 +1221,39 @@ const ICONS = {
 
 function getInitials(name) {
   return (name||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+}
+
+// Update the landing-page template showcase to reflect the user's actual plan.
+function updateShowcase() {
+  const can = !!(currentUser && (currentUser.isPro || currentUser.templates));
+  const badgeClassic = document.getElementById('showcase-badge-classic');
+  const badgeSlate   = document.getElementById('showcase-badge-slate');
+  const cta          = document.getElementById('showcase-cta');
+  if (!badgeClassic || !badgeSlate || !cta) return;
+
+  if (can) {
+    // Unlocked — show a green "UNLOCKED" badge on Classic & Slate
+    badgeClassic.textContent = '✓ UNLOCKED';
+    badgeClassic.style.background = '#3d5a47';
+    badgeClassic.style.color = '#fff';
+    badgeSlate.textContent = '✓ UNLOCKED';
+    badgeSlate.style.background = '#3d5a47';
+    badgeSlate.style.color = '#fff';
+    cta.innerHTML = '✓ All templates unlocked — enjoy!';
+    cta.style.color = '#3d5a47';
+    cta.style.fontWeight = '600';
+  } else {
+    // Locked — restore default
+    badgeClassic.textContent = 'STARTER / PRO';
+    badgeClassic.style.background = 'var(--gold)';
+    badgeClassic.style.color = 'var(--ink)';
+    badgeSlate.textContent = 'STARTER / PRO';
+    badgeSlate.style.background = 'var(--ink)';
+    badgeSlate.style.color = '#fff';
+    cta.innerHTML = 'Unlock Classic &amp; Slate with <a onclick="scroll2(\'pricing\')" style="color:var(--gold);cursor:pointer;font-weight:600">Starter or Pro →</a>';
+    cta.style.color = 'var(--muted)';
+    cta.style.fontWeight = 'normal';
+  }
 }
 
 // Switch CV template — pure class swap on #cv-wrap, instant, flows to PDF.
