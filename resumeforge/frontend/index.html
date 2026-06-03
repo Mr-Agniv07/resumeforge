@@ -150,12 +150,6 @@ textarea{resize:vertical;min-height:110px;line-height:1.6}
 .cv-lang-item{font-size:12px;color:#333}
 .cv-foot{height:4px;background:linear-gradient(90deg,#c9a84c,#3d5a47,#1a1a1a)}
 
-/* Page-fit indicator */
-.cv-overflowing{outline:2px solid #e05c3a}
-.cv-fit-bar{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:10px;padding:7px 12px;border-radius:7px;background:#fff8f6;border:1px solid #f0d0c8;color:#b84a2e;display:none}
-.cv-fit-bar.ok{background:#f4fbf5;border-color:#c3e6cb;color:#2d6a3f}
-.cv-fit-bar.warn{display:flex}
-
 /* TEMPLATE PICKER */
 .tpl-picker{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px}
 .tpl-picker-label{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#8a8378;margin-right:2px}
@@ -378,10 +372,6 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
   <div class="tabs">
     <button class="tab active" onclick="showTab('cv',this)">📄 CV / Resume</button>
     <button class="tab" onclick="showTab('cl',this)">✉ Cover Letter</button>
-  </div>
-  <!-- Page-fit warning -->
-  <div class="cv-fit-bar" id="cv-fit-bar">
-    ⚠ This CV may spill onto a second page when printed. Try regenerating with fewer details.
   </div>
   <!-- Template picker — only shown to pack/Pro users -->
   <div class="tpl-picker" id="tpl-picker" style="display:none">
@@ -749,7 +739,6 @@ async function generate() {
     }
 
     updateTemplateAccess();   // show/hide template picker based on plan
-    setTimeout(checkPageFit, 100); // check after DOM paints
 
     const out = document.getElementById('output-section');
     out.style.display = 'block';
@@ -913,7 +902,6 @@ function setTemplate(t, el) {
   const wrap = document.getElementById('cv-wrap');
   if (wrap) wrap.className = 'tpl-' + t;
   document.querySelectorAll('.tpl-chip').forEach(c => c.classList.toggle('active', c.dataset.tpl === t));
-  setTimeout(checkPageFit, 50); // layout may reflow on template switch
 }
 
 // Show the template picker only for pack/Pro users; everyone else stays on Modern.
@@ -924,17 +912,6 @@ function updateTemplateAccess() {
   if (!can) setTemplate('modern');
 }
 
-// Check if the rendered CV exceeds A4 height (297mm ≈ 1122px at 96dpi) and warn.
-function checkPageFit() {
-  const wrap = document.getElementById('cv-wrap');
-  const bar  = document.getElementById('cv-fit-bar');
-  if (!wrap || !bar) return;
-  // A4 at screen resolution: 210mm × 297mm → at 96dpi ≈ 794×1123px
-  const A4_HEIGHT_PX = 1123;
-  const overflowing  = wrap.scrollHeight > A4_HEIGHT_PX;
-  bar.className = overflowing ? 'cv-fit-bar warn' : 'cv-fit-bar';
-  wrap.classList.toggle('cv-overflowing', overflowing);
-}
 
 function renderCV(r) {
   const contacts = [
@@ -963,7 +940,18 @@ function renderCV(r) {
       <ul class="cv-bullets">${(e.bullets||[]).map(b=>`<li>${b}</li>`).join('')}</ul>
     </div>`).join('');
 
-  // Main column: Summary + Experience only (keeps it clean and single-page)
+  // Projects in main column — fills empty space after experience naturally
+  const projHTML = (r.projects||[]).length ? `
+    <div style="margin-top:18px">
+      <div class="cv-sec-head">Projects</div>
+      ${(r.projects||[]).map(p=>`
+        <div class="cv-proj-item">
+          <div class="cv-proj-name">${p.name||''}</div>
+          <div class="cv-proj-desc">${p.description||''}</div>
+          <div class="cv-proj-tech">${(p.tech||[]).map(t=>`<span>${t}</span>`).join('')}</div>
+        </div>`).join('')}
+    </div>` : '';
+
   document.getElementById('cv-main').innerHTML = `
     <div style="margin-bottom:14px">
       <div class="cv-sec-head">Professional Summary</div>
@@ -972,7 +960,7 @@ function renderCV(r) {
     <div>
       <div class="cv-sec-head">Experience</div>
       ${expHTML}
-    </div>`;
+    </div>${projHTML}`;
 
   const eduHTML = (r.education||[]).map(e=>`
     <div class="cv-edu-item">
@@ -992,19 +980,7 @@ function renderCV(r) {
 
   const langHTML = (r.languages||[]).map(l=>`<div class="cv-lang-item">• ${l}</div>`).join('');
 
-  // Projects → sidebar (compact: name + tech tags only, description omitted to save space)
-  const projSideHTML = (r.projects||[]).length ? `
-    <div class="cv-side-section">
-      <div class="cv-sec-head">Projects</div>
-      ${(r.projects||[]).map(p=>`
-        <div class="cv-proj-item">
-          <div class="cv-proj-name">${p.name||''}</div>
-          ${p.description?`<div class="cv-proj-desc">${p.description}</div>`:''}
-          <div class="cv-proj-tech">${(p.tech||[]).map(t=>`<span>${t}</span>`).join('')}</div>
-        </div>`).join('')}
-    </div>` : '';
-
-  // Field-specific extra sections → sidebar (below skills)
+  // Field-specific extra sections → sidebar (credentials only: licenses, publications, bar admissions)
   const extraSideHTML = (r.extraSections||[])
     .filter(s => s && s.heading && (s.items||[]).length)
     .map(s => `
@@ -1025,7 +1001,7 @@ function renderCV(r) {
     </div>`:''}
     ${certHTML?`<div class="cv-side-section"><div class="cv-sec-head">Certifications</div><ul class="cv-cert-list">${certHTML}</ul></div>`:''}
     ${langHTML?`<div class="cv-side-section"><div class="cv-sec-head">Languages</div><div class="cv-lang-list">${langHTML}</div></div>`:''}
-    ${projSideHTML}${extraSideHTML}`;
+    ${extraSideHTML}`;
 }
 
 function renderCL(r) {
