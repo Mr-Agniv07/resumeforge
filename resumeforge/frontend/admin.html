@@ -49,6 +49,7 @@ main{padding:28px;max-width:1200px}
 
 /* TABLE */
 .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+#payments-table,#users-table{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .table-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .table-head h2{font-size:13px;font-weight:600;font-family:var(--mono);color:var(--text)}
 .filter-row{display:flex;gap:8px}
@@ -104,8 +105,11 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 .section.active{display:block}
 
 @media(max-width:700px){
-  th:nth-child(3),td:nth-child(3){display:none}
   main{padding:16px}
+  /* Keep columns full-size and let the table scroll sideways so the Action
+     column (Approve/Reject) is always reachable. */
+  table{min-width:760px}
+  th,td{padding:11px 13px}
 }
 </style>
 </head>
