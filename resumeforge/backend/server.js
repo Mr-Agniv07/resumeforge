@@ -434,7 +434,7 @@ Return ONLY raw JSON (no markdown, no backticks, no explanation):
   "location": "${location||""}",
   "linkedin": "${linkedin||""}",
   "portfolio": "${portfolio||""}",
-  "summary": "3 sentences: years+skill, key achievement, value for this role",
+  "summary": "2-3 sentences: years+skill, key achievement, value for this role",
   "experience": [
     {
       "company": "exact employer the candidate stated",
@@ -442,6 +442,7 @@ Return ONLY raw JSON (no markdown, no backticks, no explanation):
       "duration": "exact dates if stated, else \"\"",
       "location": "location if stated, else \"\"",
       "bullets": [
+        "strong action verb + real thing they did + quantified result (only real details)",
         "strong action verb + real thing they did + quantified result (only real details)",
         "strong action verb + real thing they did + quantified result (only real details)"
       ]
@@ -451,7 +452,7 @@ Return ONLY raw JSON (no markdown, no backticks, no explanation):
     { "degree": "exact degree the candidate stated", "institution": "exact institution", "year": "year if stated else \"\"", "gpa": "gpa only if stated else \"\"" }
   ],
   "skills": {
-    "technical": ["skills the candidate stated or that are clearly implied by their described work"],
+    "technical": ["skills the candidate stated or clearly implied by their work"],
     "soft": ["relevant soft skills"]
   },
   "certifications": [
@@ -469,13 +470,13 @@ Return ONLY raw JSON (no markdown, no backticks, no explanation):
 
 CRITICAL — DO NOT FABRICATE. The empty/example values in the JSON above are FORMAT ONLY. Build the resume strictly from the candidate's text:
 - NEVER invent employers, job titles, dates/durations, locations, schools, degrees, GPAs, certifications, registration numbers, projects, or languages. Include an item ONLY if the candidate actually mentioned it.
-- If the candidate did not mention education, certifications, projects, or languages, return an EMPTY array [] for that field. Do not fill it with examples or plausible guesses.
-- For any field you have no real value for (e.g. a duration or GPA that wasn't stated), use "" — never guess.
-- You MAY rephrase/strengthen the wording of real items, write the summary and cover letter, and list skills that are clearly implied by the described work. You may NOT add facts the candidate did not provide.
+- If the candidate did not mention education, certifications, projects, or languages, return an EMPTY array [] for that field.
+- For any field you have no real value for, use "" — never guess.
+- You MAY rephrase/strengthen real items, write the summary and cover letter, and list skills clearly implied by the work. You may NOT add facts the candidate did not provide.
 
 Rules:
-- Make bullets punchy and quantified using ONLY real details from the text. Use strong action verbs.
-- CONTACT INFO IS NOT INVENTED. Use name/email/phone/location/linkedin/portfolio EXACTLY as given above; empty stays "".
+- Bullets: punchy, quantified, real details only. Strong action verbs.
+- CONTACT INFO IS NOT INVENTED. Use name/email/phone/location/linkedin/portfolio EXACTLY as given; empty stays "".
 - "extraSections": include a section ONLY if you can populate it from the candidate's text (suggested for ${prof.label}: ${prof.sections.length ? prof.sections.join(", ") : "none"}). If nothing qualifies, return "extraSections": [].`;
 
   let text;

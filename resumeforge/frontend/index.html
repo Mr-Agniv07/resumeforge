@@ -150,6 +150,12 @@ textarea{resize:vertical;min-height:110px;line-height:1.6}
 .cv-lang-item{font-size:12px;color:#333}
 .cv-foot{height:4px;background:linear-gradient(90deg,#c9a84c,#3d5a47,#1a1a1a)}
 
+/* Page-fit indicator */
+.cv-overflowing{outline:2px solid #e05c3a}
+.cv-fit-bar{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:10px;padding:7px 12px;border-radius:7px;background:#fff8f6;border:1px solid #f0d0c8;color:#b84a2e;display:none}
+.cv-fit-bar.ok{background:#f4fbf5;border-color:#c3e6cb;color:#2d6a3f}
+.cv-fit-bar.warn{display:flex}
+
 /* TEMPLATE PICKER */
 .tpl-picker{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px}
 .tpl-picker-label{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#8a8378;margin-right:2px}
@@ -372,6 +378,10 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
   <div class="tabs">
     <button class="tab active" onclick="showTab('cv',this)">📄 CV / Resume</button>
     <button class="tab" onclick="showTab('cl',this)">✉ Cover Letter</button>
+  </div>
+  <!-- Page-fit warning -->
+  <div class="cv-fit-bar" id="cv-fit-bar">
+    ⚠ This CV may spill onto a second page when printed. Try regenerating with fewer details.
   </div>
   <!-- Template picker — only shown to pack/Pro users -->
   <div class="tpl-picker" id="tpl-picker" style="display:none">
@@ -739,6 +749,7 @@ async function generate() {
     }
 
     updateTemplateAccess();   // show/hide template picker based on plan
+    setTimeout(checkPageFit, 100); // check after DOM paints
 
     const out = document.getElementById('output-section');
     out.style.display = 'block';
@@ -902,6 +913,7 @@ function setTemplate(t, el) {
   const wrap = document.getElementById('cv-wrap');
   if (wrap) wrap.className = 'tpl-' + t;
   document.querySelectorAll('.tpl-chip').forEach(c => c.classList.toggle('active', c.dataset.tpl === t));
+  setTimeout(checkPageFit, 50); // layout may reflow on template switch
 }
 
 // Show the template picker only for pack/Pro users; everyone else stays on Modern.
@@ -910,6 +922,18 @@ function updateTemplateAccess() {
   const picker = document.getElementById('tpl-picker');
   if (picker) picker.style.display = can ? 'flex' : 'none';
   if (!can) setTemplate('modern');
+}
+
+// Check if the rendered CV exceeds A4 height (297mm ≈ 1122px at 96dpi) and warn.
+function checkPageFit() {
+  const wrap = document.getElementById('cv-wrap');
+  const bar  = document.getElementById('cv-fit-bar');
+  if (!wrap || !bar) return;
+  // A4 at screen resolution: 210mm × 297mm → at 96dpi ≈ 794×1123px
+  const A4_HEIGHT_PX = 1123;
+  const overflowing  = wrap.scrollHeight > A4_HEIGHT_PX;
+  bar.className = overflowing ? 'cv-fit-bar warn' : 'cv-fit-bar';
+  wrap.classList.toggle('cv-overflowing', overflowing);
 }
 
 function renderCV(r) {
@@ -1060,7 +1084,6 @@ ${styleHTML}
 <style>
   @page { size: A4; margin: 8mm; }
   html, body { margin:0; padding:0; background:#fff; }
-  /* Force the document visible and remove screen-only chrome */
   #cv-wrap, #cl-doc { display:block !important; box-shadow:none !important; margin:0 auto !important; max-width:none !important; width:100%; }
   @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
 </style>
@@ -1076,6 +1099,24 @@ ${styleHTML}
 
     const printAndCleanup = async () => {
       if (idoc.fonts && idoc.fonts.ready) { try { await idoc.fonts.ready; } catch {} }
+
+      // Auto-scale to fit one A4 page.
+      // A4 content area with 8mm margins = 297 - 16 = 281mm ≈ 1063px at 96dpi.
+      const A4_PX = 1063;
+      const cvEl  = idoc.getElementById('cv-wrap') || idoc.getElementById('cl-doc');
+      if (cvEl) {
+        const h = cvEl.scrollHeight;
+        if (h > A4_PX) {
+          const scale = A4_PX / h;
+          cvEl.style.transformOrigin = 'top left';
+          cvEl.style.transform = `scale(${scale})`;
+          // After scaling, the element's layout height is still the original —
+          // collapse the body to the scaled height so no blank second page appears.
+          idoc.body.style.height = Math.ceil(h * scale) + 'px';
+          idoc.body.style.overflow = 'hidden';
+        }
+      }
+
       iframe.contentWindow.focus();
       iframe.contentWindow.print();
       setTimeout(() => iframe.remove(), 1000);
