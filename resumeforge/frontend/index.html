@@ -101,6 +101,27 @@ textarea{resize:vertical;min-height:110px;line-height:1.6}
 .tabs{display:flex;gap:3px;background:white;border:1px solid var(--border);border-radius:9px;padding:4px;width:fit-content;margin-bottom:26px}
 .tab{padding:8px 20px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .18s}
 .tab.active{background:var(--ink);color:white}
+/* ATS SCORE CARD */
+.ats-card{background:white;border-radius:14px;padding:20px 24px;margin-bottom:22px;display:flex;gap:24px;align-items:flex-start;box-shadow:0 2px 12px rgba(0,0,0,0.07);flex-wrap:wrap}
+.ats-ring-wrap{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:5px}
+.ats-ring{position:relative;width:80px;height:80px}
+.ats-ring svg{transform:rotate(-90deg)}
+.ats-ring-track{fill:none;stroke:#eee;stroke-width:8}
+.ats-ring-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .8s ease}
+.ats-score-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.ats-score-big{font-size:22px;font-weight:800;color:var(--ink)}
+.ats-score-sub{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.ats-ring-label{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.ats-details{flex:1;min-width:180px}
+.ats-bars{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.ats-bar-row{display:flex;align-items:center;gap:10px}
+.ats-bar-name{font-size:12px;color:#555;width:108px;flex-shrink:0}
+.ats-bar-track{flex:1;height:6px;background:#eee;border-radius:3px;overflow:hidden}
+.ats-bar-fill{height:100%;border-radius:3px;transition:width .7s ease;width:0%}
+.ats-bar-pct{font-size:11px;font-weight:600;width:32px;text-align:right;flex-shrink:0}
+.ats-tips{display:flex;flex-direction:column;gap:5px}
+.ats-tip{font-size:12px;color:#555;display:flex;gap:7px;align-items:flex-start;line-height:1.4}
+.ats-tip-icon{flex-shrink:0;font-size:11px;margin-top:1px}
 
 /* CV DOC */
 #cv-wrap{max-width:800px;margin:0 auto;box-shadow:0 6px 48px rgba(0,0,0,0.16);background:white}
@@ -438,6 +459,28 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
     <button class="tab active" onclick="showTab('cv',this)">📄 CV / Resume</button>
     <button class="tab" onclick="showTab('cl',this)">✉ Cover Letter</button>
   </div>
+  <!-- ATS Score card — visible on CV tab only -->
+  <div id="ats-card" class="ats-card" style="display:none">
+    <div class="ats-ring-wrap">
+      <div class="ats-ring">
+        <svg width="80" height="80" viewBox="0 0 80 80">
+          <circle class="ats-ring-track" cx="40" cy="40" r="34"/>
+          <circle class="ats-ring-fill" id="ats-ring-fill" cx="40" cy="40" r="34"
+            stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+        </svg>
+        <div class="ats-score-num">
+          <span class="ats-score-big" id="ats-score-big">--</span>
+          <span class="ats-score-sub">/ 100</span>
+        </div>
+      </div>
+      <span class="ats-ring-label" id="ats-ring-label">ATS Score</span>
+    </div>
+    <div class="ats-details">
+      <div class="ats-bars" id="ats-bars"></div>
+      <div class="ats-tips" id="ats-tips"></div>
+    </div>
+  </div>
+
   <!-- Template picker — always visible; premium templates show a lock for free/single users -->
   <div class="tpl-picker" id="tpl-picker">
     <span class="tpl-picker-label">Template</span>
@@ -1052,7 +1095,7 @@ async function generate() {
     }
 
     R = data.resume;
-    renderCV(R); renderCL(R);
+    renderCV(R); renderCL(R); renderATS(R);
 
     // Update usage display
     if (data.usage && currentUser) {
@@ -1413,13 +1456,70 @@ function renderCL(r) {
     </div>`;
 }
 
+function renderATS(r) {
+  const a = r.atsScore;
+  const card = document.getElementById('ats-card');
+  if (!card) return;
+  if (!a || typeof a.score !== 'number') { card.style.display = 'none'; return; }
+
+  // Color ramp: Excellent = gold, Good = sage, Fair = orange, Poor = red
+  const scoreColor = a.score >= 85 ? '#c9a84c' : a.score >= 75 ? '#3d5a47' : a.score >= 60 ? '#d97706' : '#dc2626';
+
+  // Animate the SVG ring (circumference of r=34 circle ≈ 213.6)
+  const fill = document.getElementById('ats-ring-fill');
+  if (fill) {
+    fill.style.stroke = scoreColor;
+    setTimeout(() => { fill.style.strokeDashoffset = 213.6 * (1 - a.score / 100); }, 80);
+  }
+  const numEl = document.getElementById('ats-score-big');
+  numEl.textContent = a.score;
+  numEl.style.color = scoreColor;
+  const lblEl = document.getElementById('ats-ring-label');
+  lblEl.textContent = a.label || 'ATS Score';
+  lblEl.style.color = scoreColor;
+
+  // Sub-score bars
+  const subsEl = document.getElementById('ats-bars');
+  const subs = [
+    { name: 'Keywords',       val: a.keywords       },
+    { name: 'Formatting',     val: a.formatting     },
+    { name: 'Sections',       val: a.sections       },
+    { name: 'Quantification', val: a.quantification },
+  ];
+  subsEl.innerHTML = subs.map(s => {
+    const c = s.val >= 85 ? '#c9a84c' : s.val >= 75 ? '#3d5a47' : s.val >= 60 ? '#d97706' : '#dc2626';
+    return `<div class="ats-bar-row">
+      <span class="ats-bar-name">${s.name}</span>
+      <div class="ats-bar-track"><div class="ats-bar-fill" style="background:${c}" data-w="${s.val}%"></div></div>
+      <span class="ats-bar-pct" style="color:${c}">${s.val}%</span>
+    </div>`;
+  }).join('');
+  setTimeout(() => {
+    subsEl.querySelectorAll('.ats-bar-fill').forEach(el => { el.style.width = el.dataset.w; });
+  }, 120);
+
+  // Tips
+  const tipsEl = document.getElementById('ats-tips');
+  tipsEl.innerHTML = (a.tips || []).map(t =>
+    `<div class="ats-tip"><span class="ats-tip-icon">💡</span>${t}</div>`
+  ).join('');
+
+  card.dataset.ready = '1';
+  card.style.display = 'flex';
+}
+
 function showTab(tab, el) {
   activeTab = tab;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('cv-wrap').style.display = tab==='cv'?'block':'none';
-  document.getElementById('cl-doc').style.display  = tab==='cl'?'block':'none';
-  document.getElementById('dl-btn').textContent    = tab==='cv'?'⬇ Download CV PDF':'⬇ Download Cover Letter PDF';
+  document.getElementById('cv-wrap').style.display  = tab==='cv'?'block':'none';
+  document.getElementById('cl-doc').style.display   = tab==='cl'?'block':'none';
+  document.getElementById('dl-btn').textContent     = tab==='cv'?'⬇ Download CV PDF':'⬇ Download Cover Letter PDF';
+  // ATS card is only relevant on the CV tab
+  const atsCard = document.getElementById('ats-card');
+  if (atsCard && atsCard.dataset.ready) atsCard.style.display = tab==='cv'?'flex':'none';
+  const tplPicker = document.getElementById('tpl-picker');
+  if (tplPicker) tplPicker.style.display = tab==='cv'?'flex':'none';
 }
 
 async function downloadPDF() {
