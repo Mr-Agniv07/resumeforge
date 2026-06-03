@@ -513,16 +513,7 @@ Return ONLY raw JSON (no markdown, no backticks, no explanation):
   "coverLetter": "Full 3-paragraph cover letter. Para1: enthusiasm for role and company. Para2: 2-3 specific achievements matching the role. Para3: confident call to action.",
   "extraSections": [
     { "heading": "Field-specific section title", "items": ["concise, specific point", "concise, specific point"] }
-  ],
-  "atsScore": {
-    "score": <overall ATS score 0-100>,
-    "label": "<Poor|Fair|Good|Excellent>",
-    "keywords": <0-100>,
-    "formatting": <0-100>,
-    "sections": <0-100>,
-    "quantification": <0-100>,
-    "tips": ["specific actionable tip", "specific actionable tip"]
-  }
+  ]
 }
 
 CRITICAL — DO NOT FABRICATE. The empty/example values in the JSON above are FORMAT ONLY. Build the resume strictly from the candidate's text:
@@ -537,7 +528,7 @@ Rules:
 - Summary: 2 sentences max. Sharp and specific — who they are, not what they did.
 - Don't pad — quality over quantity in every section.
 - CONTACT INFO IS NOT INVENTED. Use name/email/phone/location/linkedin/portfolio EXACTLY as given; empty stays "".
-- "atsScore": Score your own output honestly. Weighted average: keywords 30% + formatting 25% + sections 25% + quantification 20%. Labels: 0-59 Poor · 60-74 Fair · 75-84 Good · 85-100 Excellent. "tips": exactly 2 short, specific, actionable suggestions to raise the score (what is actually missing or weak in THIS resume). Never generic advice.
+- ATS OPTIMIZATION: Use the exact job title from the role in the "title" field. Mirror the language and keywords of the target role throughout — especially in summary, bullets, and skills. Use only standard section headings (Experience, Education, Skills, Certifications, Projects). Spell out abbreviations at least once. Every bullet must start with a strong action verb and include at least one concrete detail; quantify with numbers wherever the candidate's text permits. Never use synonyms when the role's own keywords fit.
 - "extraSections": ${prof.sections.length
     ? `ONLY valid for ${prof.label}: ${prof.sections.join(", ")}. Include a section ONLY if the candidate explicitly mentioned that specific credential (e.g. an actual license number, a real publication, a bar enrollment). NEVER use extraSections for achievements, projects, or anything already in experience/projects/certifications. If the candidate did not mention any of these credentials, return "extraSections": [].`
     : `return "extraSections": [] — this field does not use extra sections.`}`;
@@ -546,7 +537,7 @@ Rules:
   try {
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 2800,
+      max_tokens: 2500,
       messages: [{ role: "user", content: prompt }],
     });
 
