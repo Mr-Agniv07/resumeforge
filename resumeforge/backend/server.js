@@ -434,7 +434,7 @@ Return ONLY raw JSON (no markdown, no backticks, no explanation):
   "location": "${location||""}",
   "linkedin": "${linkedin||""}",
   "portfolio": "${portfolio||""}",
-  "summary": "2-3 sentences: years+skill, key achievement, value for this role",
+  "summary": "2 sentences MAX. Who they are professionally (field + years of experience + top strength). Do NOT list projects, achievements, or specific work here — those belong in Experience.",
   "experience": [
     {
       "company": "exact employer the candidate stated",

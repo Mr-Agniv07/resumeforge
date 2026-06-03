@@ -105,7 +105,7 @@ textarea{resize:vertical;min-height:110px;line-height:1.6}
 /* CV DOC */
 #cv-wrap{max-width:800px;margin:0 auto;box-shadow:0 6px 48px rgba(0,0,0,0.16);background:white}
 .cv-accent{height:6px;background:linear-gradient(90deg,#1a1a1a 0%,#3d5a47 50%,#c9a84c 100%)}
-.cv-head{padding:36px 44px 28px;border-bottom:1px solid #e8e4dc;display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
+.cv-head{padding:24px 40px 18px;border-bottom:1px solid #e8e4dc;display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
 .cv-name{font-family:'EB Garamond',serif;font-size:34px;font-weight:600;color:#111;letter-spacing:-0.5px;line-height:1.1;margin-bottom:5px}
 .cv-title-line{font-size:13px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:#3d5a47;margin-bottom:16px}
 .cv-contact-row{display:flex;flex-wrap:wrap;gap:0}
@@ -113,11 +113,11 @@ textarea{resize:vertical;min-height:110px;line-height:1.6}
 .cv-contact-item:last-child{border-right:none;padding-right:0;margin-right:0}
 .cv-initials{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#1a1a1a,#3d5a47);display:flex;align-items:center;justify-content:center;font-family:'EB Garamond',serif;font-size:24px;font-weight:600;color:white;flex-shrink:0}
 .cv-body{display:grid;grid-template-columns:1fr 248px;gap:0}
-.cv-main{padding:28px 32px 36px 44px;border-right:1px solid #ede9e0}
-.cv-side{padding:28px 32px 36px 28px;background:#fafaf7}
+.cv-main{padding:20px 28px 24px 40px;border-right:1px solid #ede9e0}
+.cv-side{padding:20px 24px 24px 22px;background:#fafaf7}
 .cv-sec-head{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#3d5a47;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid #c9a84c}
-.cv-summary{font-family:'EB Garamond',serif;font-size:14.5px;color:#333;line-height:1.8;font-style:italic}
-.cv-exp-block{margin-bottom:22px;padding-bottom:22px;border-bottom:1px dashed #e0dbd0}
+.cv-summary{font-family:'EB Garamond',serif;font-size:14px;color:#333;line-height:1.55;font-style:italic}
+.cv-exp-block{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed #e0dbd0}
 .cv-exp-block:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 .cv-exp-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:2px}
 .cv-exp-role{font-size:14px;font-weight:600;color:#111;line-height:1.3}
@@ -125,9 +125,9 @@ textarea{resize:vertical;min-height:110px;line-height:1.6}
 .cv-exp-co{font-size:12px;color:#3d5a47;font-weight:600;margin-bottom:9px}
 .cv-exp-loc{color:#888;font-weight:400}
 .cv-bullets{list-style:none;display:flex;flex-direction:column;gap:5px}
-.cv-bullets li{font-size:12.5px;color:#3a3835;line-height:1.68;padding-left:15px;position:relative;font-weight:400}
+.cv-bullets li{font-size:12.5px;color:#3a3835;line-height:1.5;padding-left:15px;position:relative;font-weight:400}
 .cv-bullets li::before{content:'▸';position:absolute;left:0;color:#c9a84c;font-size:9px;top:3px}
-.cv-side-section{margin-bottom:24px}
+.cv-side-section{margin-bottom:16px}
 .cv-side-section:last-child{margin-bottom:0}
 .cv-edu-item{margin-bottom:14px}
 .cv-edu-deg{font-size:12.5px;font-weight:600;color:#111;line-height:1.35}
@@ -984,7 +984,7 @@ function renderCV(r) {
       </div>`).join('');
 
   document.getElementById('cv-main').innerHTML = `
-    <div style="margin-bottom:24px">
+    <div style="margin-bottom:14px">
       <div class="cv-sec-head">Professional Summary</div>
       <div class="cv-summary">${r.summary||''}</div>
     </div>
