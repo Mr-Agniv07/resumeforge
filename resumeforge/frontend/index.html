@@ -963,26 +963,7 @@ function renderCV(r) {
       <ul class="cv-bullets">${(e.bullets||[]).map(b=>`<li>${b}</li>`).join('')}</ul>
     </div>`).join('');
 
-  const projHTML = (r.projects||[]).length ? `
-    <div style="margin-top:24px">
-      <div class="cv-sec-head">Notable Projects</div>
-      ${(r.projects||[]).map(p=>`
-        <div class="cv-proj-item">
-          <div class="cv-proj-name">${p.name||''}</div>
-          <div class="cv-proj-desc">${p.description||''}</div>
-          <div class="cv-proj-tech">${(p.tech||[]).map(t=>`<span>${t}</span>`).join('')}</div>
-        </div>`).join('')}
-    </div>` : '';
-
-  // Field-specific sections (licenses, publications, bar admissions, portfolio, etc.)
-  const extraHTML = (r.extraSections||[])
-    .filter(s => s && s.heading && (s.items||[]).length)
-    .map(s => `
-      <div style="margin-top:24px">
-        <div class="cv-sec-head">${s.heading}</div>
-        <ul class="cv-bullets">${(s.items||[]).map(i=>`<li>${i}</li>`).join('')}</ul>
-      </div>`).join('');
-
+  // Main column: Summary + Experience only (keeps it clean and single-page)
   document.getElementById('cv-main').innerHTML = `
     <div style="margin-bottom:14px">
       <div class="cv-sec-head">Professional Summary</div>
@@ -991,7 +972,7 @@ function renderCV(r) {
     <div>
       <div class="cv-sec-head">Experience</div>
       ${expHTML}
-    </div>${projHTML}${extraHTML}`;
+    </div>`;
 
   const eduHTML = (r.education||[]).map(e=>`
     <div class="cv-edu-item">
@@ -1011,6 +992,27 @@ function renderCV(r) {
 
   const langHTML = (r.languages||[]).map(l=>`<div class="cv-lang-item">• ${l}</div>`).join('');
 
+  // Projects → sidebar (compact: name + tech tags only, description omitted to save space)
+  const projSideHTML = (r.projects||[]).length ? `
+    <div class="cv-side-section">
+      <div class="cv-sec-head">Projects</div>
+      ${(r.projects||[]).map(p=>`
+        <div class="cv-proj-item">
+          <div class="cv-proj-name">${p.name||''}</div>
+          ${p.description?`<div class="cv-proj-desc">${p.description}</div>`:''}
+          <div class="cv-proj-tech">${(p.tech||[]).map(t=>`<span>${t}</span>`).join('')}</div>
+        </div>`).join('')}
+    </div>` : '';
+
+  // Field-specific extra sections → sidebar (below skills)
+  const extraSideHTML = (r.extraSections||[])
+    .filter(s => s && s.heading && (s.items||[]).length)
+    .map(s => `
+      <div class="cv-side-section">
+        <div class="cv-sec-head">${s.heading}</div>
+        <ul class="cv-cert-list">${(s.items||[]).map(i=>`<li>${i}</li>`).join('')}</ul>
+      </div>`).join('');
+
   document.getElementById('cv-side').innerHTML = `
     ${eduHTML?`<div class="cv-side-section">
       <div class="cv-sec-head">Education</div>
@@ -1022,7 +1024,8 @@ function renderCV(r) {
       ${softTags?`<div class="cv-skill-group"><div class="cv-skill-cat">Soft Skills</div><div class="cv-skill-tags">${softTags}</div></div>`:''}
     </div>`:''}
     ${certHTML?`<div class="cv-side-section"><div class="cv-sec-head">Certifications</div><ul class="cv-cert-list">${certHTML}</ul></div>`:''}
-    ${langHTML?`<div class="cv-side-section"><div class="cv-sec-head">Languages</div><div class="cv-lang-list">${langHTML}</div></div>`:''}`;
+    ${langHTML?`<div class="cv-side-section"><div class="cv-sec-head">Languages</div><div class="cv-lang-list">${langHTML}</div></div>`:''}
+    ${projSideHTML}${extraSideHTML}`;
 }
 
 function renderCL(r) {
@@ -1116,12 +1119,15 @@ ${styleHTML}
 
 function copyText() {
   if (!R) return;
+  const projText = (R.projects||[]).length
+    ? `\n\nPROJECTS\n${R.projects.map(p=>`${p.name}${p.description?' — '+p.description:''}`).join('\n')}`
+    : '';
   const extraText = (R.extraSections||[])
     .filter(s => s && s.heading && (s.items||[]).length)
     .map(s => `\n\n${(s.heading||'').toUpperCase()}\n${(s.items||[]).map(i=>`  • ${i}`).join('\n')}`)
     .join('');
   let t = activeTab === 'cv'
-    ? `${R.name||''}\n${R.title||''}\n${[R.email,R.phone,R.location].filter(Boolean).join(' | ')}\n\nPROFESSIONAL SUMMARY\n${R.summary||''}\n\nEXPERIENCE\n${(R.experience||[]).map(e=>`${e.role} — ${e.company} (${e.duration})\n${(e.bullets||[]).map(b=>`  • ${b}`).join('\n')}`).join('\n\n')}\n\nSKILLS\n${(R.skills?.technical||[]).join(', ')}\n\nEDUCATION\n${(R.education||[]).map(e=>`${e.degree} — ${e.institution} (${e.year})`).join('\n')}${extraText}`
+    ? `${R.name||''}\n${R.title||''}\n${[R.email,R.phone,R.location].filter(Boolean).join(' | ')}\n\nPROFESSIONAL SUMMARY\n${R.summary||''}\n\nEXPERIENCE\n${(R.experience||[]).map(e=>`${e.role} — ${e.company} (${e.duration})\n${(e.bullets||[]).map(b=>`  • ${b}`).join('\n')}`).join('\n\n')}\n\nSKILLS\n${(R.skills?.technical||[]).join(', ')}\n\nEDUCATION\n${(R.education||[]).map(e=>`${e.degree} — ${e.institution} (${e.year})`).join('\n')}${projText}${extraText}`
     : (R.coverLetter||'');
   navigator.clipboard.writeText(t).then(() => {
     const b = event.target; b.textContent = '✓ Copied!';
