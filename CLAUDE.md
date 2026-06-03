@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The git root is `resumeforge-fullstack/`, but the entire application lives in the `resumeforge/` subdirectory:
 
-- `resumeforge/backend/` — Express API, single-file server in `server.js` (~410 lines, all routes/schemas/middleware live here).
+- `resumeforge/backend/` — Express API, single-file server in `server.js` (~630 lines, all routes/schemas/middleware live here).
 - `resumeforge/frontend/` — two standalone static pages, **no build step, no framework, no bundler**:
   - `index.html` — the end-user app (Google sign-in, resume generation, UPI payment flow).
   - `admin.html` — the admin panel (review/approve payments, manage users).
@@ -33,11 +33,11 @@ Both frontend files **hardcode the backend URL to production** at the top of the
 const BACKEND = "https://resumeforge-hun8.onrender.com";
 ```
 
-To run against a local backend you must edit this to `http://localhost:3001` in `index.html` (line ~415) and `admin.html` (line ~189). Likewise `GOOGLE_ID` (`index.html` ~416), `UPI_ID`/`UPI_NAME` (~417), and the admin key are client-side constants/prompts, not env-driven.
+To run against a local backend you must edit this to `http://localhost:3001` in `index.html` (line ~813) and `admin.html` (line ~189). Likewise `GOOGLE_ID` (`index.html` ~814), `UPI_ID`/`UPI_NAME` (~815), and the admin key are client-side constants/prompts, not env-driven.
 
 ## Configuration
 
-Backend config is entirely env-driven via `resumeforge/backend/.env` (copy from `.env.example`). Required keys: `ANTHROPIC_API_KEY`, `MONGO_URI`, `GOOGLE_CLIENT_ID`, `JWT_SECRET`, `ADMIN_SECRET`. Also `FRONTEND_URL` (CORS origin), `PORT` (default 3001), `FREE_MONTHLY_LIMIT` (default 2). `MAIL_USER`/`MAIL_PASS`/`RESEND_API_KEY` exist in `.env` and `nodemailer`/`resend` are installed, but **email is not yet wired into `server.js`**.
+Backend config is entirely env-driven via `resumeforge/backend/.env` (copy from `.env.example`). Required keys: `ANTHROPIC_API_KEY`, `MONGO_URI`, `GOOGLE_CLIENT_ID`, `JWT_SECRET`, `ADMIN_SECRET`. Also `FRONTEND_URL` (CORS origin), `PORT` (default 3001), `FREE_MONTHLY_LIMIT` (default 2), `ANON_IP_LIMIT` (default 6, per-IP backstop against anonymous localStorage abuse). `MAIL_USER`/`MAIL_PASS`/`RESEND_API_KEY` exist in `.env` and `nodemailer`/`resend` are installed, but **email is not yet wired into `server.js`**.
 
 Note: the root `.gitignore` ignores `README.md`, `node_modules/`, and `.env`.
 
@@ -45,7 +45,7 @@ Note: the root `.gitignore` ignores `README.md`, `node_modules/`, and `.env`.
 
 **Stack:** Express + Mongoose (MongoDB) on the backend; vanilla HTML/CSS/JS frontend; Anthropic SDK (`claude-sonnet-4-6`) for generation.
 
-**Two Mongoose models** (defined inline in `server.js`): `User` and `Payment`.
+**Three Mongoose models** (defined inline in `server.js`): `User`, `Payment`, and `AnonSession`.
 
 **Authentication flow:**
 1. Frontend uses Google Identity Services (GSI) to get a Google ID token.
@@ -68,9 +68,16 @@ Note: the root `.gitignore` ignores `README.md`, `node_modules/`, and `.env`.
 
 **Anonymous single-CV flow (no Google sign-in):** user pays ₹15 → after approval calls `POST /api/auth/claim` with `{ email, utr }`, which verifies an approved payment and issues a JWT. From then on generation works identically to a signed-in user, just charged against credits.
 
+**Key helpers in `server.js`:**
+- `refreshUser(user)` — call on every authenticated request; expires time-limited Pro, resets monthly counter, updates `lastActiveAt`. See above.
+- `readAuth(req)` — reads the JWT if present but never rejects the request (used by routes that serve both authed and anonymous users, like `POST /api/generate`).
+- `userPayload(user)` — shapes the object returned to the frontend; always use this rather than returning the raw Mongoose doc.
+
 **Generation endpoints:**
-- `POST /api/generate` (auth required) — picks the allowance in order **Pro (unlimited) → free monthly (signed-in only) → credits**, returns `402` if none, then prompts Claude for a **raw JSON resume object** (large fixed schema). Strips ``` fences, `JSON.parse`s, increments `cvCount`, and decrements `credits` when a credit was used. The request's `field` selects a `PROFESSIONS` entry (engineering/medical/legal/teaching/finance/business/design/sales/general) whose `guidance` + suggested `sections` are injected into the prompt to specialize the resume. The schema includes an optional `extraSections: [{ heading, items[] }]` the model fills with field-specific blocks (licenses, bar admissions, publications, portfolio, etc.), rendered in the CV's main column. The frontend separately maps `field` to the skills-section heading and to profession-aware input placeholders (`applyFieldHints`).
+- `POST /api/generate` (no `requireAuth` — accepts both authed and anonymous via `readAuth`) — picks the allowance in order **Pro (unlimited) → free monthly (signed-in only) → credits**, returns `402` if none, then prompts Claude for a **raw JSON resume object** (large fixed schema). Strips ``` fences, `JSON.parse`s, increments `cvCount`, and decrements `credits` when a credit was used. The request's `field` selects a `PROFESSIONS` entry (engineering/medical/legal/teaching/finance/business/design/sales/general) whose `guidance` + suggested `sections` are injected into the prompt to specialize the resume. The schema includes an optional `extraSections: [{ heading, items[] }]` the model fills with field-specific blocks (licenses, bar admissions, publications, portfolio, etc.), rendered in the CV's main column. The frontend separately maps `field` to the skills-section heading and to profession-aware input placeholders (`applyFieldHints`).
 - `POST /api/linkedin` (auth required, **Pro-only**) — rewrites a LinkedIn "About" section.
+- `GET /api/stats` — public; returns `{ totalCVs }` aggregated from all `User.cvCount`, cached 60 s. Used by the live counter on the hero section.
+- `GET /api/health` — public health check.
 
 **Security middleware:** `helmet`, `cors` (origin from `FRONTEND_URL`), and `express-rate-limit` (50 req / 15 min on `/api/`). `trust proxy` is set to 1 for correct client IPs behind Render's proxy.
 
