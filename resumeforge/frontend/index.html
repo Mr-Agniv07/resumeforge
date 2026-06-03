@@ -151,11 +151,69 @@ textarea{resize:vertical;min-height:110px;line-height:1.6}
 .cv-foot{height:4px;background:linear-gradient(90deg,#c9a84c,#3d5a47,#1a1a1a)}
 
 /* TEMPLATE PICKER */
-.tpl-picker{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:18px}
-.tpl-picker-label{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#8a8378;margin-right:2px}
-.tpl-chip{background:#fff;border:1px solid var(--border);color:var(--ink);padding:7px 16px;border-radius:20px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
-.tpl-chip:hover{border-color:var(--ink)}
-.tpl-chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tpl-picker{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.tpl-picker-label{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#8a8378;margin-right:2px;white-space:nowrap}
+/* Template cards — always visible */
+.tpl-card{position:relative;border:2px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s,box-shadow .15s;background:#fff;flex-shrink:0}
+.tpl-card:hover{border-color:#aaa;box-shadow:0 2px 12px rgba(0,0,0,0.1)}
+.tpl-card.active{border-color:var(--ink);box-shadow:0 2px 12px rgba(0,0,0,0.15)}
+.tpl-card.locked{cursor:default}
+.tpl-card.locked:hover{border-color:var(--gold);box-shadow:0 2px 12px rgba(201,168,76,0.2)}
+.tpl-card-label{font-size:11px;font-weight:600;text-align:center;padding:5px 0 6px;color:var(--ink);background:#fff;border-top:1px solid #eee;letter-spacing:.5px}
+/* Lock overlay */
+.tpl-lock{position:absolute;inset:0;background:rgba(255,255,255,0.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;backdrop-filter:blur(1px)}
+.tpl-lock-icon{font-size:18px}
+.tpl-lock-cta{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold);text-decoration:none}
+.tpl-lock-cta:hover{text-decoration:underline}
+/* Mini CV mockups inside cards */
+.tpl-mini{width:110px;height:148px;overflow:hidden;display:block;font-size:0}
+.tpl-mini-modern{background:#fff}
+.tpl-mini-classic{background:#fff}
+.tpl-mini-slate{background:#fff}
+/* Modern mini */
+.tm-accent{height:3px;background:linear-gradient(90deg,#1a1a1a,#3d5a47,#c9a84c)}
+.tm-head{padding:7px 8px 5px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #e8e4dc}
+.tm-name{width:52px;height:5px;background:#111;border-radius:1px;margin-bottom:3px}
+.tm-title{width:36px;height:3px;background:#3d5a47;border-radius:1px;margin-bottom:4px}
+.tm-contacts{display:flex;gap:2px}.tm-c{width:14px;height:2px;background:#bbb;border-radius:1px}
+.tm-avatar{width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#1a1a1a,#3d5a47);flex-shrink:0}
+.tm-body{display:grid;grid-template-columns:1fr 36px;gap:0;height:calc(100% - 38px)}
+.tm-main{padding:5px 4px 5px 7px;border-right:1px solid #ede9e0}
+.tm-side{padding:5px 4px;background:#fafaf7}
+.tm-sh{width:100%;height:2px;background:linear-gradient(90deg,#3d5a47 60%,transparent);margin-bottom:3px;margin-top:5px}
+.tm-sh:first-child{margin-top:0}
+.tm-line{height:2px;background:#ddd;border-radius:1px;margin-bottom:2px}
+.tm-line.w90{width:90%}.tm-line.w70{width:70%}.tm-line.w50{width:50%}.tm-line.w40{width:40%}.tm-line.w30{width:30%}
+.tm-bullet{height:2px;background:#e8e0d0;border-radius:1px;margin-bottom:2px;margin-left:4px}
+.tm-bullet::before{content:'';display:inline-block;width:2px;height:2px;background:#c9a84c;border-radius:50%;margin-right:2px;vertical-align:middle}
+.tm-tag{display:inline-block;height:4px;background:#f0ece4;border:1px solid #e5e0d5;border-radius:1px;margin:1px;width:20px}
+.tm-foot{height:2px;background:linear-gradient(90deg,#c9a84c,#3d5a47,#1a1a1a)}
+/* Classic mini */
+.tc-head{padding:7px 9px 5px;border-bottom:2px solid #1a1a1a}
+.tc-name{width:55px;height:5px;background:#1a1a1a;border-radius:1px;margin-bottom:3px}
+.tc-title{width:32px;height:3px;background:#444;border-radius:1px;margin-bottom:3px}
+.tc-contacts{display:flex;gap:3px;margin-bottom:0}.tc-cc{width:16px;height:2px;background:#999;border-radius:1px}
+.tc-body{padding:6px 9px}
+.tc-sh{width:55px;height:2px;background:#1a1a1a;margin-bottom:3px;margin-top:5px}
+.tc-sh:first-child{margin-top:0}
+.tc-line{height:2px;background:#ddd;border-radius:1px;margin-bottom:2px}
+.tc-line.w90{width:90%}.tc-line.w70{width:70%}.tc-line.w50{width:50%}.tc-line.w40{width:40%}
+.tc-bullet{height:2px;background:#ccc;border-radius:1px;margin-bottom:2px;margin-left:5px}
+.tc-tag{display:inline-block;height:4px;background:#f4f4f2;border:1px solid #ddd;border-radius:1px;margin:1px;width:18px}
+/* Slate mini */
+.ts-head{padding:8px 8px 7px;background:#14171c}
+.ts-name{width:52px;height:5px;background:#fff;border-radius:1px;margin-bottom:3px}
+.ts-title{width:34px;height:3px;background:#c9a84c;border-radius:1px;margin-bottom:4px}
+.ts-contacts{display:flex;gap:2px}.ts-cc{width:14px;height:2px;background:#666;border-radius:1px}
+.ts-body{display:grid;grid-template-columns:1fr 36px;height:calc(100% - 44px)}
+.ts-main{padding:5px 4px 5px 7px;border-right:1px solid #ede9e0}
+.ts-side{padding:5px 4px;background:#fafaf7}
+.ts-sh{width:100%;height:2px;background:linear-gradient(90deg,#14171c 60%,transparent);border-bottom:1px solid #c9a84c;margin-bottom:3px;margin-top:5px}
+.ts-sh:first-child{margin-top:0}
+.ts-line{height:2px;background:#ddd;border-radius:1px;margin-bottom:2px}
+.ts-line.w90{width:90%}.ts-line.w70{width:70%}.ts-line.w50{width:50%}.ts-line.w40{width:40%}
+.ts-bullet{height:2px;background:#e0dbd0;border-radius:1px;margin-bottom:2px;margin-left:4px}
+.ts-tag{display:inline-block;height:4px;background:#f0ece4;border:1px solid #e5e0d5;border-radius:1px;margin:1px;width:20px}
 
 /* TEMPLATE: Classic — single column, traditional black/white, ATS-clean */
 #cv-wrap.tpl-classic .cv-accent,#cv-wrap.tpl-classic .cv-foot,#cv-wrap.tpl-classic .cv-initials{display:none}
@@ -373,12 +431,99 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
     <button class="tab active" onclick="showTab('cv',this)">📄 CV / Resume</button>
     <button class="tab" onclick="showTab('cl',this)">✉ Cover Letter</button>
   </div>
-  <!-- Template picker — only shown to pack/Pro users -->
-  <div class="tpl-picker" id="tpl-picker" style="display:none">
+  <!-- Template picker — always visible; premium templates show a lock for free/single users -->
+  <div class="tpl-picker" id="tpl-picker">
     <span class="tpl-picker-label">Template</span>
-    <button class="tpl-chip active" data-tpl="modern"  onclick="setTemplate('modern',this)">Modern</button>
-    <button class="tpl-chip"        data-tpl="classic" onclick="setTemplate('classic',this)">Classic</button>
-    <button class="tpl-chip"        data-tpl="slate"   onclick="setTemplate('slate',this)">Slate</button>
+
+    <!-- Modern — free for everyone -->
+    <div class="tpl-card active" id="tpl-card-modern" onclick="setTemplate('modern')">
+      <div class="tpl-mini tpl-mini-modern">
+        <div class="tm-accent"></div>
+        <div class="tm-head">
+          <div><div class="tm-name"></div><div class="tm-title"></div><div class="tm-contacts"><div class="tm-c"></div><div class="tm-c"></div><div class="tm-c"></div></div></div>
+          <div class="tm-avatar"></div>
+        </div>
+        <div class="tm-body">
+          <div class="tm-main">
+            <div class="tm-sh"></div>
+            <div class="tm-line w90"></div><div class="tm-line w70"></div>
+            <div class="tm-sh"></div>
+            <div class="tm-line w50"></div>
+            <div class="tm-bullet w70"></div><div class="tm-bullet w90"></div>
+            <div class="tm-line w40"></div>
+            <div class="tm-bullet w80"></div><div class="tm-bullet w60"></div>
+          </div>
+          <div class="tm-side">
+            <div class="tm-sh"></div>
+            <div class="tm-line w90"></div><div class="tm-line w70"></div>
+            <div class="tm-sh"></div>
+            <div class="tm-tag"></div><div class="tm-tag"></div><div class="tm-tag"></div><div class="tm-tag"></div>
+          </div>
+        </div>
+        <div class="tm-foot"></div>
+      </div>
+      <div class="tpl-card-label">Modern</div>
+    </div>
+
+    <!-- Classic — locked for free/single -->
+    <div class="tpl-card locked" id="tpl-card-classic" onclick="onPremiumTplClick()">
+      <div class="tpl-mini tpl-mini-classic">
+        <div class="tc-head">
+          <div class="tc-name"></div><div class="tc-title"></div>
+          <div class="tc-contacts"><div class="tc-cc"></div><div class="tc-cc"></div><div class="tc-cc"></div></div>
+        </div>
+        <div class="tc-body">
+          <div class="tc-sh"></div>
+          <div class="tc-line w90"></div><div class="tc-line w70"></div>
+          <div class="tc-sh"></div>
+          <div class="tc-line w50"></div>
+          <div class="tc-bullet" style="width:85%"></div><div class="tc-bullet" style="width:70%"></div>
+          <div class="tc-line w40"></div>
+          <div class="tc-bullet" style="width:80%"></div><div class="tc-bullet" style="width:65%"></div>
+          <div class="tc-sh"></div>
+          <div class="tc-tag"></div><div class="tc-tag"></div><div class="tc-tag"></div><div class="tc-tag"></div>
+        </div>
+      </div>
+      <div class="tpl-lock" id="tpl-lock-classic">
+        <div class="tpl-lock-icon">🔒</div>
+        <div style="font-size:10px;font-weight:700;color:#555;letter-spacing:.5px">CLASSIC</div>
+        <a class="tpl-lock-cta" onclick="event.stopPropagation();scroll2('pricing')">Unlock →</a>
+      </div>
+      <div class="tpl-card-label">Classic</div>
+    </div>
+
+    <!-- Slate — locked for free/single -->
+    <div class="tpl-card locked" id="tpl-card-slate" onclick="onPremiumTplClick()">
+      <div class="tpl-mini tpl-mini-slate">
+        <div class="ts-head">
+          <div class="ts-name"></div><div class="ts-title"></div>
+          <div class="ts-contacts"><div class="ts-cc"></div><div class="ts-cc"></div><div class="ts-cc"></div></div>
+        </div>
+        <div class="ts-body">
+          <div class="ts-main">
+            <div class="ts-sh"></div>
+            <div class="ts-line w90"></div><div class="ts-line w70"></div>
+            <div class="ts-sh"></div>
+            <div class="ts-line w50"></div>
+            <div class="ts-bullet" style="width:85%"></div><div class="ts-bullet" style="width:70%"></div>
+            <div class="ts-line w40"></div>
+            <div class="ts-bullet" style="width:80%"></div>
+          </div>
+          <div class="ts-side">
+            <div class="ts-sh"></div>
+            <div class="ts-line w90"></div><div class="ts-line w70"></div>
+            <div class="ts-sh"></div>
+            <div class="ts-tag"></div><div class="ts-tag"></div><div class="ts-tag"></div>
+          </div>
+        </div>
+      </div>
+      <div class="tpl-lock" id="tpl-lock-slate">
+        <div class="tpl-lock-icon">🔒</div>
+        <div style="font-size:10px;font-weight:700;color:#555;letter-spacing:.5px">SLATE</div>
+        <a class="tpl-lock-cta" onclick="event.stopPropagation();scroll2('pricing')">Unlock →</a>
+      </div>
+      <div class="tpl-card-label">Slate</div>
+    </div>
   </div>
   <div id="cv-wrap" class="tpl-modern">
     <div class="cv-accent"></div>
@@ -538,7 +683,8 @@ let currentTemplate = "modern";   // CV visual template (premium users can switc
 
 // ── INIT ───────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
-  applyFieldHints();   // profession-aware placeholders for the default field
+  applyFieldHints();        // profession-aware placeholders for the default field
+  updateTemplateAccess();   // set lock state before user logs in
 
   // Initialize Google Sign-In buttons
   if (window.google) initGoogle();
@@ -896,19 +1042,36 @@ function getInitials(name) {
   return (name||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
 }
 
-// Switch CV template — pure class swap on #cv-wrap (same DOM, instant, flows to PDF).
-function setTemplate(t, el) {
+// Switch CV template — pure class swap on #cv-wrap, instant, flows to PDF.
+function setTemplate(t) {
+  const can = !!(currentUser && (currentUser.isPro || currentUser.templates));
+  if (t !== 'modern' && !can) { scroll2('pricing'); return; }
   currentTemplate = t;
   const wrap = document.getElementById('cv-wrap');
   if (wrap) wrap.className = 'tpl-' + t;
-  document.querySelectorAll('.tpl-chip').forEach(c => c.classList.toggle('active', c.dataset.tpl === t));
+  document.querySelectorAll('.tpl-card').forEach(c => c.classList.toggle('active', c.id === 'tpl-card-' + t));
 }
 
-// Show the template picker only for pack/Pro users; everyone else stays on Modern.
+// Called when a locked template card is clicked by a non-premium user.
+function onPremiumTplClick() { scroll2('pricing'); }
+
+// Remove locks for pack/Pro users; keep them for free/single.
 function updateTemplateAccess() {
   const can = !!(currentUser && (currentUser.isPro || currentUser.templates));
-  const picker = document.getElementById('tpl-picker');
-  if (picker) picker.style.display = can ? 'flex' : 'none';
+  ['classic','slate'].forEach(t => {
+    const card = document.getElementById('tpl-card-' + t);
+    const lock = document.getElementById('tpl-lock-' + t);
+    if (!card || !lock) return;
+    if (can) {
+      card.classList.remove('locked');
+      card.onclick = () => setTemplate(t);
+      lock.style.display = 'none';
+    } else {
+      card.classList.add('locked');
+      card.onclick = onPremiumTplClick;
+      lock.style.display = 'flex';
+    }
+  });
   if (!can) setTemplate('modern');
 }
 
