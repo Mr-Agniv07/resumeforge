@@ -849,6 +849,68 @@ let currentUser  = null;
 let currentField = "engineering";
 let currentTemplate = "modern";   // CV visual template (premium users can switch)
 
+// ── CV persistence ─────────────────────────────────────────
+// The generated resume lives in memory (R); without this it's lost on refresh,
+// tab close, or accidental navigation — costing the user a paid credit. We snapshot
+// the resume + form inputs + chosen template to localStorage and restore on load.
+const CV_STORE_KEY = "rf_last_cv";
+const CV_STORE_TTL = 30 * 24 * 60 * 60 * 1000;   // keep for 30 days
+
+function saveCVState() {
+  if (!R) return;
+  try {
+    const val = id => (document.getElementById(id)?.value || "");
+    localStorage.setItem(CV_STORE_KEY, JSON.stringify({
+      resume:   R,
+      field:    currentField,
+      template: currentTemplate,
+      form: {
+        field: val("f-field"), name: val("f-name"), role: val("f-role"),
+        email: val("f-email"), phone: val("f-phone"), location: val("f-location"),
+        linkedin: val("f-linkedin"), portfolio: val("f-portfolio"),
+        company: val("f-company"), exp: val("f-exp"), jd: val("f-jd"),
+      },
+      savedAt: Date.now(),
+    }));
+  } catch {}   // localStorage may be full or blocked — fail silently
+}
+
+function restoreCVState() {
+  let state;
+  try { state = JSON.parse(localStorage.getItem(CV_STORE_KEY) || "null"); }
+  catch { return; }
+  if (!state || !state.resume) return;
+  if (state.savedAt && Date.now() - state.savedAt > CV_STORE_TTL) {
+    localStorage.removeItem(CV_STORE_KEY);
+    return;
+  }
+
+  // Restore the form inputs so "Edit & regenerate" still works after a refresh
+  if (state.form) {
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    set("f-field", state.form.field);  set("f-name", state.form.name);
+    set("f-role", state.form.role);    set("f-email", state.form.email);
+    set("f-phone", state.form.phone);  set("f-location", state.form.location);
+    set("f-linkedin", state.form.linkedin); set("f-portfolio", state.form.portfolio);
+    set("f-company", state.form.company);   set("f-exp", state.form.exp);
+    set("f-jd", state.form.jd);
+    if (state.form.jd) document.getElementById("jd-block")?.classList.add("open");
+  }
+
+  currentField = state.field || document.getElementById("f-field")?.value || "engineering";
+  applyFieldHints();
+  currentTemplate = state.template || "modern";
+
+  R = state.resume;
+  renderCV(R); renderCL(R);
+  const wrap = document.getElementById("cv-wrap");
+  if (wrap) wrap.className = "tpl-" + currentTemplate;
+  updateTemplateAccess();   // re-locks premium templates if the current plan can't use them
+
+  const out = document.getElementById("output-section");
+  if (out) out.style.display = "block";
+}
+
 // Persistent anonymous session ID — assigned once per browser, stored in localStorage.
 // Lets the backend track free usage without requiring an account.
 function getAnonId() {
@@ -913,6 +975,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   } else {
     renderAuth(null);
   }
+
+  // Bring back the last generated CV after auth resolves (so premium template
+  // access is evaluated against the correct plan).
+  restoreCVState();
 });
 
 function initGoogle() {
@@ -1032,8 +1098,12 @@ function renderAuth(user) {
 
 function logout() {
   localStorage.removeItem('rf_token');
+  localStorage.removeItem(CV_STORE_KEY);   // don't leave a CV behind on shared computers
+  R = null;
   currentUser = null;
   renderAuth(null);
+  const out = document.getElementById('output-section');
+  if (out) out.style.display = 'none';
   if (window.google) google.accounts.id.disableAutoSelect();
 }
 
@@ -1113,6 +1183,7 @@ async function generate() {
     }
 
     updateTemplateAccess();   // show/hide template picker based on plan
+    saveCVState();            // persist so a refresh/tab-close doesn't lose the CV
 
     const out = document.getElementById('output-section');
     out.style.display = 'block';
@@ -1315,6 +1386,7 @@ function setTemplate(t) {
   document.querySelectorAll('.tpl-card').forEach(c => c.classList.toggle('active', c.id === 'tpl-card-' + t));
   // Sync builder cards
   document.querySelectorAll('.builder-tpl-card').forEach(c => c.classList.toggle('active', c.id === 'btpl-card-' + t));
+  if (R) saveCVState();   // keep the persisted copy in sync with the chosen template
 }
 
 // Called when a locked template card is clicked by a non-premium user.
