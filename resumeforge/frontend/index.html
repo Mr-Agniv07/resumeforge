@@ -101,6 +101,25 @@ textarea{resize:vertical;min-height:110px;line-height:1.6}
 .jd-block.open .jd-body{display:block}
 .jd-body textarea{min-height:120px}
 .jd-tag{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gold);background:rgba(201,168,76,0.14);padding:2px 8px;border-radius:4px}
+/* WRITING GUIDE */
+.guide-block{margin:0 0 14px;border:1px solid rgba(255,255,255,0.12);border-radius:10px;background:rgba(255,255,255,0.04);overflow:hidden}
+.guide-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;cursor:pointer;user-select:none}
+.guide-toggle-title{font-size:13.5px;font-weight:600;color:#e8dcc0;display:flex;align-items:center;gap:8px}
+.guide-chev{font-size:12px;color:var(--gold);transition:transform .2s}
+.guide-block.open .guide-chev{transform:rotate(180deg)}
+.guide-body{display:none;padding:2px 18px 18px}
+.guide-block.open .guide-body{display:block}
+.guide-tip{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#cfc6b6;line-height:1.55;margin-bottom:11px}
+.guide-tip-ic{flex-shrink:0;font-size:14px;margin-top:1px}
+.guide-tip b{color:#fff;font-weight:600}
+.guide-eg{margin-top:14px;border-top:1px solid rgba(255,255,255,0.1);padding-top:14px}
+.guide-eg-row{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;line-height:1.5;margin-bottom:8px}
+.guide-eg-bad{color:#c98a8a}
+.guide-eg-good{color:#a9c9a0}
+.guide-eg-tag{flex-shrink:0;font-weight:700}
+.guide-insert-row{margin-top:4px}
+.guide-insert-btn{background:rgba(201,168,76,0.14);color:var(--gold);border:1px solid rgba(201,168,76,0.35);padding:7px 14px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.guide-insert-btn:hover{background:rgba(201,168,76,0.22)}
 .gen-btn{width:100%;background:var(--gold);color:var(--ink);border:none;padding:16px;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .2s;margin-top:6px}
 .gen-btn:hover{opacity:.9}
 .gen-btn:disabled{opacity:.5;cursor:not-allowed}
@@ -448,6 +467,32 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
     <div class="form-group"><label>Target Company (optional)</label><input id="f-company" placeholder="Google, Swiggy…"/></div>
     <div class="form-group full">
       <label>Experience &amp; Education — write everything here *</label>
+
+      <!-- Collapsible writing guide — helps users give the best input -->
+      <div class="guide-block" id="guide-block">
+        <div class="guide-toggle" onclick="toggleGuide()">
+          <span class="guide-toggle-title">💡 How to write this for the best CV</span>
+          <span class="guide-chev">▼</span>
+        </div>
+        <div class="guide-body">
+          <div class="guide-tip"><span class="guide-tip-ic">📋</span><span><b>Dump everything — order doesn't matter.</b> List your companies, job titles, dates, what you actually did, education, certifications, and languages. The AI structures it for you, so don't worry about grammar or formatting.</span></div>
+          <div class="guide-tip"><span class="guide-tip-ic">🔢</span><span><b>Add numbers wherever you can.</b> Team size, users served, % improvements, revenue, rank, marks. "Led 5 people" and "cut costs 30%" become powerful resume bullets — vague statements don't.</span></div>
+          <div class="guide-tip"><span class="guide-tip-ic">🛠️</span><span><b>Name the real tools, tech, and methods</b> you used. These become your Skills section and match what employers search for.</span></div>
+          <div class="guide-tip"><span class="guide-tip-ic">🎯</span><span><b>Set your Target Role accurately</b> (field above) — the whole CV is tailored to it. Pasting the job description in the "Tailor to a job" box below makes it even sharper.</span></div>
+          <div class="guide-tip"><span class="guide-tip-ic">🔒</span><span><b>Only real facts.</b> We never invent anything — if you don't write it, it won't appear. So include every genuine detail, but nothing you can't back up.</span></div>
+          <div class="guide-tip"><span class="guide-tip-ic">⚡</span><span><b>Shortcut:</b> paste your old resume or your LinkedIn "About" section and we'll restructure it into a clean, tailored CV.</span></div>
+
+          <div class="guide-eg">
+            <div class="guide-eg-row guide-eg-bad"><span class="guide-eg-tag">✗ Weak:</span><span>"Worked as a developer at a company for a few years. Did coding and other tasks."</span></div>
+            <div class="guide-eg-row guide-eg-good"><span class="guide-eg-tag">✓ Strong:</span><span>"3 yrs at TCS as a Java developer. Built microservices for a banking app serving 2M users. Led a team of 5. B.Tech CSE, JNTU 2019. Skills: AWS, Docker, Spring Boot."</span></div>
+          </div>
+
+          <div class="guide-insert-row">
+            <button type="button" class="guide-insert-btn" onclick="insertExample()">✨ Insert an example for my field</button>
+          </div>
+        </div>
+      </div>
+
       <textarea id="f-exp" rows="8" placeholder="E.g: 4 years at TCS as Java developer. Built microservices for banking app with 2M users. Led team of 5. B.Tech CSE from JNTU Hyderabad 2019. Know AWS, Docker, Spring Boot. Got AWS Solutions Architect cert last year." required></textarea>
       <div style="font-size:12px;color:#8a8378;margin-top:2px;line-height:1.5">
         Include your companies, roles, what you did, education, certifications and languages.
@@ -861,6 +906,22 @@ function applyFieldHints() {
   const p = PLACEHOLDERS[f] || PLACEHOLDERS.general;
   document.getElementById('f-role').placeholder = p.role;
   document.getElementById('f-exp').placeholder  = p.exp;
+}
+
+// Expand/collapse the "how to write this" guide.
+function toggleGuide() {
+  document.getElementById('guide-block').classList.toggle('open');
+}
+
+// Fill the experience box with a field-specific example so users see the shape.
+// Won't clobber text the user has already typed.
+function insertExample() {
+  const ta = document.getElementById('f-exp');
+  if (ta.value.trim() && !confirm('Replace what you\'ve written with the example?')) return;
+  const f = document.getElementById('f-field').value;
+  const p = PLACEHOLDERS[f] || PLACEHOLDERS.general;
+  ta.value = (p.exp || '').replace(/^E\.g:\s*/i, '');   // drop the "E.g:" prefix
+  ta.focus();
 }
 
 let R            = null;
