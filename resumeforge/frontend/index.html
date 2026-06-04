@@ -53,6 +53,14 @@ h1 em{color:var(--gold);font-style:italic}
 .sec-sub{font-size:15px;color:#a89a7a;max-width:500px;line-height:1.65;margin-bottom:28px}
 
 /* Auth bar (shown when logged in) */
+/* Restored-CV banner */
+.restored-banner{background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.35);border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.restored-banner-left{display:flex;align-items:center;gap:12px}
+.restored-banner-icon{font-size:22px;flex-shrink:0}
+.restored-banner-title{font-size:14px;font-weight:600;color:#e8dcc0}
+.restored-banner-sub{font-size:12px;color:#a89a7a;margin-top:1px}
+.restored-banner-btn{background:var(--gold);color:var(--ink);border:none;padding:9px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.restored-banner-btn:hover{opacity:.9}
 .auth-bar{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px 18px;margin-bottom:24px;display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
 .auth-bar-left{display:flex;align-items:center;gap:10px}
 .auth-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(201,168,76,0.4)}
@@ -383,6 +391,18 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
   <div class="sec-tag">Build your CV</div>
   <div class="sec-title" style="color:white">Tell us about yourself</div>
   <div class="sec-sub">The more detail you give, the better the CV. Paste your old resume, LinkedIn bio, or just describe your work history.</div>
+
+  <!-- Restored-CV banner — shown when a previously generated CV is recovered from this browser -->
+  <div class="restored-banner" id="restored-banner" style="display:none">
+    <div class="restored-banner-left">
+      <span class="restored-banner-icon">📄</span>
+      <div>
+        <div class="restored-banner-title">Your last CV is saved</div>
+        <div class="restored-banner-sub">We kept the resume you generated — pick up right where you left off.</div>
+      </div>
+    </div>
+    <button class="restored-banner-btn" onclick="scroll2('output-section')">View my CV →</button>
+  </div>
 
   <!-- Auth bar (logged in) -->
   <div class="auth-bar" id="auth-bar">
@@ -909,6 +929,10 @@ function restoreCVState() {
 
   const out = document.getElementById("output-section");
   if (out) out.style.display = "block";
+
+  // Surface a clear cue at the top of the builder so the user can find it
+  const banner = document.getElementById("restored-banner");
+  if (banner) banner.style.display = "flex";
 }
 
 // Persistent anonymous session ID — assigned once per browser, stored in localStorage.
@@ -1104,6 +1128,8 @@ function logout() {
   renderAuth(null);
   const out = document.getElementById('output-section');
   if (out) out.style.display = 'none';
+  const banner = document.getElementById('restored-banner');
+  if (banner) banner.style.display = 'none';
   if (window.google) google.accounts.id.disableAutoSelect();
 }
 
@@ -1184,6 +1210,9 @@ async function generate() {
 
     updateTemplateAccess();   // show/hide template picker based on plan
     saveCVState();            // persist so a refresh/tab-close doesn't lose the CV
+
+    const banner = document.getElementById('restored-banner');
+    if (banner) banner.style.display = 'none';   // fresh CV is on screen now
 
     const out = document.getElementById('output-section');
     out.style.display = 'block';
