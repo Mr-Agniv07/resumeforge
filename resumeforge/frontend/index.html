@@ -1065,7 +1065,62 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Bring back the last generated CV after auth resolves (so premium template
   // access is evaluated against the correct plan).
   restoreCVState();
+
+  // Pre-fill the builder from URL params (job-board deep links, shared links, ads).
+  // Runs last so an incoming link takes precedence over a restored draft.
+  applyUrlPrefill();
 });
+
+// Reads query params and pre-fills the builder so visitors arriving from the job
+// board (or any deep link) land on a form that's ready — optionally with the job
+// description loaded into the "Tailor to a job" box. All values are plain text set
+// into inputs (no innerHTML), capped for safety. Supported params:
+//   role, field, name, email, phone, location, linkedin, portfolio, company, exp, jd
+function applyUrlPrefill() {
+  const q = new URLSearchParams(location.search);
+  if (![...q.keys()].length) return;
+
+  let touched = false;
+  const setVal = (id, key, max = 500) => {
+    const v = q.get(key);
+    if (!v) return;
+    const el = document.getElementById(id);
+    if (el) { el.value = v.slice(0, max); touched = true; }
+  };
+
+  // Field dropdown needs special handling (must be a known profession)
+  const field = (q.get('field') || '').toLowerCase();
+  if (field && PLACEHOLDERS[field]) {
+    document.getElementById('f-field').value = field;
+    currentField = field;
+    touched = true;
+  }
+
+  setVal('f-name', 'name', 120);
+  setVal('f-role', 'role', 120);
+  setVal('f-email', 'email', 160);
+  setVal('f-phone', 'phone', 40);
+  setVal('f-location', 'location', 120);
+  setVal('f-linkedin', 'linkedin', 200);
+  setVal('f-portfolio', 'portfolio', 200);
+  setVal('f-company', 'company', 120);
+  setVal('f-exp', 'exp', 4000);
+
+  applyFieldHints();   // refresh placeholders for the (possibly new) field
+
+  // Job description → open and fill the "Tailor to a job" box
+  const jd = q.get('jd');
+  if (jd) {
+    const jdEl = document.getElementById('f-jd');
+    if (jdEl) { jdEl.value = jd.slice(0, 6000); touched = true; }
+    document.getElementById('jd-block')?.classList.add('open');
+  }
+
+  // If anything was pre-filled, drop the visitor straight onto the builder.
+  if (touched) {
+    setTimeout(() => document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth' }), 200);
+  }
+}
 
 function initGoogle() {
   const cfg = {
