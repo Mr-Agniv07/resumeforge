@@ -21,6 +21,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink)}
 nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(250,248,243,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 5%;height:64px}
 .nav-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700}
 .nav-logo span{color:var(--gold)}
+.nav-links{display:flex;gap:20px;align-items:center}
 .nav-right{display:flex;align-items:center;gap:12px}
 .nav-user{display:none;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
 .nav-user img{width:28px;height:28px;border-radius:50%;object-fit:cover}
@@ -372,7 +373,7 @@ footer{padding:36px 5%;border-top:1px solid var(--border);display:flex;align-ite
 <!-- NAV -->
 <nav>
   <div class="nav-logo">Resume<span>Forge</span></div>
-  <div class="nav-links" style="display:flex;gap:20px;align-items:center">
+  <div class="nav-links">
     <a onclick="scroll2('templates')" style="font-size:13px;color:var(--muted);cursor:pointer;text-decoration:none;white-space:nowrap">Templates</a>
     <a onclick="scroll2('pricing')"   style="font-size:13px;color:var(--muted);cursor:pointer;text-decoration:none;white-space:nowrap">Pricing</a>
   </div>
